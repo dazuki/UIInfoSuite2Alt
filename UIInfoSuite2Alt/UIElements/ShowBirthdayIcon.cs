@@ -236,10 +236,9 @@ internal class ShowBirthdayIcon : IDisposable
     catch (Exception ex)
     {
       ModEntry.MonitorObject.LogOnce(
-        $"ShowBirthdayIcon: failed to get friendship data, npc={name}",
+        $"ShowBirthdayIcon: failed to get friendship data, npc={name}\n{ex}",
         LogLevel.Error
       );
-      ModEntry.MonitorObject.Log(ex.ToString());
     }
 
     return null;
