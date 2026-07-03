@@ -42,7 +42,12 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
 
     if (showRobinBuildingStatus)
     {
+      // Logged here, not in UpdateRobinBuindingStatusData: OnTickInRobinHouse calls it every second.
       UpdateRobinBuindingStatusData();
+      ModEntry.MonitorObject.Log(
+        $"ShowRobinBuildingStatusIcon: building status updated, inProgress={_IsBuildingInProgress}",
+        LogLevel.Trace
+      );
 
       _helper.Events.GameLoop.DayStarted += OnDayStarted;
       _helper.Events.Display.RenderingHud += OnRenderingHud;

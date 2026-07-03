@@ -203,6 +203,11 @@ public static class ArtisanPriceHelper
       }
       return true;
     });
+
+    ModEntry.MonitorObject.Log(
+      $"ArtisanPriceHelper: owned machine scan complete, machines={_ownedMachines.Count}",
+      LogLevel.Trace
+    );
   }
 
   private static void CheckAndAddOwned(Item item, Dictionary<string, MachineData> machines)
