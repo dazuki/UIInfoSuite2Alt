@@ -74,7 +74,7 @@ public static class Tools
       if (fruitTreeData.Fruit is not { Count: > 0 })
       {
         ModEntry.MonitorObject.LogOnce(
-          $"Tools.GetHarvest: fruit tree '{item.ItemId}' has no fruit entries",
+          $"Tools: fruit tree '{item.ItemId}' has no fruit entries",
           LogLevel.Warn
         );
         return null;
@@ -88,7 +88,7 @@ public static class Tools
       if (string.IsNullOrWhiteSpace(fruitId))
       {
         ModEntry.MonitorObject.LogOnce(
-          $"Tools.GetHarvest: fruit tree '{item.ItemId}' has no literal fruit ItemId (uses item query?); skipping harvest price",
+          $"Tools: fruit tree '{item.ItemId}' has no literal fruit ItemId (uses item query?); skipping harvest price",
           LogLevel.Trace
         );
         return null;
@@ -103,7 +103,7 @@ public static class Tools
       if (string.IsNullOrWhiteSpace(cropData.HarvestItemId))
       {
         ModEntry.MonitorObject.LogOnce(
-          $"Tools.GetHarvest: crop '{item.ItemId}' has no literal HarvestItemId (uses item query?); skipping harvest price",
+          $"Tools: crop '{item.ItemId}' has no literal HarvestItemId (uses item query?); skipping harvest price",
           LogLevel.Trace
         );
         return null;
@@ -123,7 +123,7 @@ public static class Tools
       if (string.IsNullOrWhiteSpace(dropId))
       {
         ModEntry.MonitorObject.LogOnce(
-          $"Tools.GetHarvest: custom bush '{item.QualifiedItemId}' has no literal drop ItemId; skipping harvest price",
+          $"Tools: custom bush '{item.QualifiedItemId}' has no literal drop ItemId; skipping harvest price",
           LogLevel.Trace
         );
         return null;
@@ -152,7 +152,7 @@ public static class Tools
     catch (Exception ex)
     {
       ModEntry.MonitorObject.LogOnce(
-        $"Tools.GetHarvest: failed to create harvest item '{harvestItemId}' for seed '{seedItemId}'; skipping harvest price. Error: {ex.Message}",
+        $"Tools: failed to create harvest item '{harvestItemId}' for seed '{seedItemId}'; skipping harvest price, {ex.Message}",
         LogLevel.Warn
       );
       return null;

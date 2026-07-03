@@ -89,7 +89,7 @@ internal static class WalkOfLifeHelper
     catch (Exception ex)
     {
       ModEntry.MonitorObject.Log(
-        $"WalkOfLifeHelper: failed to read config.json: {ex.Message}",
+        $"WalkOfLifeHelper: failed to read config.json, {ex.Message}",
         LogLevel.Warn
       );
     }

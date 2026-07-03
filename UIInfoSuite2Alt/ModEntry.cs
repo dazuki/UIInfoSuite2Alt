@@ -99,7 +99,7 @@ public partial class ModEntry : Mod
     MonitorObject = Monitor;
     _modHelper = helper;
 
-    Monitor.Log($"Loaded v{ModManifest.Version}", LogLevel.Info);
+    Monitor.Log($"ModEntry: loaded v{ModManifest.Version}", LogLevel.Info);
 
     var harmony = new Harmony(ModManifest.UniqueID);
     TvChannelWatcher.Initialize(harmony, helper);
@@ -206,7 +206,7 @@ public partial class ModEntry : Mod
       if (!helper.ModRegistry.IsLoaded(modId))
       {
         MonitorObject.Log(
-          $"Recommended mod not installed - {name} [Nexus:{nexusId}] - {reason}",
+          $"ModEntry: recommended mod not installed - {name} [Nexus:{nexusId}] - {reason}",
           LogLevel.Warn
         );
       }

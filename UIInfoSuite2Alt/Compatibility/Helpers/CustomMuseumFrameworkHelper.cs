@@ -84,7 +84,7 @@ internal static class CustomMuseumFrameworkHelper
     catch (Exception ex)
     {
       ModEntry.MonitorObject.Log(
-        $"CustomMuseumFrameworkHelper: failed to read CMF museum data, message={ex.Message}",
+        $"CustomMuseumFrameworkHelper: failed to read CMF museum data, {ex.Message}",
         LogLevel.Warn
       );
       return [];

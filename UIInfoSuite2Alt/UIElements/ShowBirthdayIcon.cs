@@ -310,7 +310,7 @@ internal class ShowBirthdayIcon : IDisposable
         catch (Exception ex)
         {
           ModEntry.MonitorObject.LogOnce(
-            $"ShowBirthdayIcon: failed to get gift taste for '{item.QualifiedItemId}' / NPC '{npc.Name}'; skipping. Error: {ex.Message}",
+            $"ShowBirthdayIcon: failed to get gift taste for '{item.QualifiedItemId}' / NPC '{npc.Name}'; skipping, {ex.Message}",
             LogLevel.Trace
           );
           continue;

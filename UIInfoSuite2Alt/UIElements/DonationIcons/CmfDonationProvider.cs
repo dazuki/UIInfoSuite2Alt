@@ -69,7 +69,7 @@ internal class CmfDonationProvider : IDonationIconProvider
     catch (Exception ex)
     {
       ModEntry.MonitorObject.Log(
-        $"CmfDonationProvider: override icon load failed, museum={_locationName}, asset={overrideIcon.AssetName}, message={ex.Message}",
+        $"CmfDonationProvider: override icon load failed, museum={_locationName}, asset={overrideIcon.AssetName}, {ex.Message}",
         LogLevel.Warn
       );
       return null;
@@ -109,7 +109,7 @@ internal class CmfDonationProvider : IDonationIconProvider
     catch (Exception ex)
     {
       ModEntry.MonitorObject.Log(
-        $"CmfDonationProvider: direct texture load failed, owner={ownerName}, museum={_locationName}, message={ex.Message}",
+        $"CmfDonationProvider: direct texture load failed, owner={ownerName}, museum={_locationName}, {ex.Message}",
         LogLevel.Trace
       );
       return null;
@@ -126,7 +126,7 @@ internal class CmfDonationProvider : IDonationIconProvider
     catch (Exception ex)
     {
       ModEntry.MonitorObject.Log(
-        $"CmfDonationProvider: fallback icon load failed, museum={_locationName}, message={ex.Message}",
+        $"CmfDonationProvider: fallback icon load failed, museum={_locationName}, {ex.Message}",
         LogLevel.Warn
       );
       return null;

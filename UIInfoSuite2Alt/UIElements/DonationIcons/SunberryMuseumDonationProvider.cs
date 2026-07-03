@@ -140,7 +140,7 @@ internal class SunberryMuseumDonationProvider : IDonationIconProvider
     catch (Exception ex)
     {
       ModEntry.MonitorObject.Log(
-        $"SunberryMuseumDonationProvider: fallback icon load failed, message={ex.Message}",
+        $"SunberryMuseumDonationProvider: fallback icon load failed, {ex.Message}",
         LogLevel.Warn
       );
       return null;

@@ -189,7 +189,7 @@ internal class ShowArtifactSpotTooltip : IDisposable
     catch (Exception ex)
     {
       ModEntry.MonitorObject.LogOnce(
-        $"ShowArtifactSpotTooltip: failed to read FTM buried items via reflection; skipping prediction. Error: {ex.Message}",
+        $"ShowArtifactSpotTooltip: failed to read FTM buried items via reflection; skipping prediction, {ex.Message}",
         LogLevel.Trace
       );
       return null;

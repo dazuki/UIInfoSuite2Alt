@@ -551,7 +551,7 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
     }
 
     ModEntry.MonitorObject.Log(
-      $"ShowCalendarAndBillboard: watching menu close, menu={menu.GetType().Name}",
+      $"ShowCalendarAndBillboardOnGameMenuButton: watching menu close, menu={menu.GetType().Name}",
       LogLevel.Trace
     );
   }
@@ -608,7 +608,7 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
     else
     {
       ModEntry.MonitorObject.Log(
-        $"ShowCalendarAndBillboard: return-to-inventory skipped, active={Game1.activeClickableMenu?.GetType().Name}",
+        $"ShowCalendarAndBillboardOnGameMenuButton: return-to-inventory skipped, active={Game1.activeClickableMenu?.GetType().Name}",
         LogLevel.Trace
       );
     }
@@ -633,14 +633,17 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
 
     if (Game1.activeClickableMenu == null && !Game1.eventUp && !Game1.dialogueUp)
     {
-      ModEntry.MonitorObject.Log("ShowCalendarAndBillboard: reopening GameMenu", LogLevel.Trace);
+      ModEntry.MonitorObject.Log(
+        "ShowCalendarAndBillboardOnGameMenuButton: reopening GameMenu",
+        LogLevel.Trace
+      );
       Game1.activeClickableMenu = new GameMenu(GameMenu.inventoryTab, playOpeningSound: false);
       SuppressMenuButtons();
     }
     else
     {
       ModEntry.MonitorObject.Log(
-        $"ShowCalendarAndBillboard: return-to-inventory deferred but skipped, active={Game1.activeClickableMenu?.GetType().Name}",
+        $"ShowCalendarAndBillboardOnGameMenuButton: return-to-inventory deferred but skipped, active={Game1.activeClickableMenu?.GetType().Name}",
         LogLevel.Trace
       );
     }

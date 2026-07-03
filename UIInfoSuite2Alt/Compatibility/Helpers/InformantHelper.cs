@@ -151,7 +151,7 @@ internal static class InformantHelper
     catch (Exception ex)
     {
       ModEntry.MonitorObject.Log(
-        $"InformantHelper: reflection setup failed: {ex.Message}",
+        $"InformantHelper: reflection setup failed, {ex.Message}",
         LogLevel.Warn
       );
     }

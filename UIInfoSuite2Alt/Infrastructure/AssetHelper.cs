@@ -59,7 +59,7 @@ public static class AssetHelper
     catch (Exception ex)
     {
       ModEntry.MonitorObject.Log(
-        $"AssetHelper: failed to load asset '{assetName}': {ex.Message}",
+        $"AssetHelper: failed to load asset '{assetName}', {ex.Message}",
         LogLevel.Error
       );
       return null;
@@ -102,7 +102,7 @@ public static class AssetHelper
     catch (Exception ex)
     {
       ModEntry.MonitorObject.Log(
-        $"AssetHelper: failed to load asset '{Path.GetFileName(filePath)}': {ex.Message}",
+        $"AssetHelper: failed to load asset '{Path.GetFileName(filePath)}', {ex.Message}",
         LogLevel.Error
       );
       return null;

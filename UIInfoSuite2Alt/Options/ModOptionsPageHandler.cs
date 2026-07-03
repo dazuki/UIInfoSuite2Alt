@@ -1817,7 +1817,10 @@ internal class ModOptionsPageHandler : IDisposable
       return $"v={assemblyVersion}";
     }
 
-    ModEntry.MonitorObject.LogOnce("ModOptionsPageHandler: could not retrieve assembly version");
+    ModEntry.MonitorObject.LogOnce(
+      "ModOptionsPageHandler: could not retrieve assembly version",
+      LogLevel.Info
+    );
 
     return "(unknown version)";
   }

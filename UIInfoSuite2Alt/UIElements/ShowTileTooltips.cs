@@ -659,7 +659,7 @@ internal class ShowTileTooltips : IDisposable
     catch (Exception ex)
     {
       ModEntry.MonitorObject.LogOnce(
-        $"ShowTileTooltips: CustomBush.TryGetShakeOffItem failed for bush at {bush.Tile}: {ex.Message}",
+        $"ShowTileTooltips: CustomBush.TryGetShakeOffItem failed for bush at {bush.Tile}, {ex.Message}",
         LogLevel.Warn
       );
       shakeOffItem = null;
@@ -1796,7 +1796,7 @@ internal class ShowTileTooltips : IDisposable
           catch (Exception ex)
           {
             ModEntry.MonitorObject.LogOnce(
-              $"ShowTileTooltips: CustomBush.IsInSeason failed for bush at {bush.Tile}: {ex.Message}",
+              $"ShowTileTooltips: CustomBush.IsInSeason failed for bush at {bush.Tile}, {ex.Message}",
               LogLevel.Warn
             );
           }

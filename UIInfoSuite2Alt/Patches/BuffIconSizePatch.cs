@@ -72,7 +72,7 @@ internal static class BuffIconSizePatch
     catch (Exception ex)
     {
       ModEntry.MonitorObject.Log(
-        $"BuffIconSizePatch: failed to initialize; buff icon sizing disabled. {ex.Message}",
+        $"BuffIconSizePatch: failed to initialize; buff icon sizing disabled, {ex.Message}",
         LogLevel.Warn
       );
     }
@@ -119,7 +119,7 @@ internal static class BuffIconSizePatch
     catch (Exception ex)
     {
       ModEntry.MonitorObject.LogOnce(
-        $"BuffIconSizePatch: failed to resize buff icons. {ex.Message}",
+        $"BuffIconSizePatch: failed to resize buff icons, {ex.Message}",
         LogLevel.Warn
       );
     }

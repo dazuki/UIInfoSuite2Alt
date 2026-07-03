@@ -306,9 +306,12 @@ internal static class BundleHelper
           entryList.Add([bundleIdx, quantity, quality]);
         }
       }
-      catch (Exception)
+      catch (Exception e)
       {
-        ModEntry.MonitorObject.Log($"BundleHelper: failed to parse bundle {bundleInfo.ToString()}");
+        ModEntry.MonitorObject.Log(
+          $"BundleHelper: failed to parse bundle '{bundleInfo}', {e.Message}",
+          LogLevel.Warn
+        );
       }
     }
 

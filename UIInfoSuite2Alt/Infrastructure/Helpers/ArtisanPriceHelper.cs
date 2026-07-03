@@ -285,7 +285,7 @@ public static class ArtisanPriceHelper
             {
               // Malformed id - fall back to the raw RequiredItemId below.
               ModEntry.MonitorObject.LogOnce(
-                $"ArtisanPriceHelper: failed to qualify RequiredItemId '{trig.RequiredItemId}'; using raw id. Error: {ex.Message}",
+                $"ArtisanPriceHelper: failed to qualify RequiredItemId '{trig.RequiredItemId}'; using raw id, {ex.Message}",
                 LogLevel.Trace
               );
             }
@@ -565,7 +565,7 @@ public static class ArtisanPriceHelper
           if (trace)
           {
             ModEntry.MonitorObject.Log(
-              $"ArtisanPriceHelper:   {machineQid} rule={rule.Id} GetOutputItem threw: {ex.Message}",
+              $"ArtisanPriceHelper:   {machineQid} rule={rule.Id} GetOutputItem threw, {ex.Message}",
               LogLevel.Trace
             );
           }

@@ -77,8 +77,7 @@ public static class LauncherDrawerHelper
     if (missing.Count > 0)
     {
       monitor.Log(
-        "LauncherDrawerHelper: Launcher Drawer internals changed, icon overlap compat is disabled - please report this. Missing members: "
-          + string.Join(", ", missing),
+        $"LauncherDrawerHelper: Launcher Drawer internals changed, icon overlap compat is disabled - please report this, missing=[{string.Join(", ", missing)}]",
         LogLevel.Warn
       );
     }
