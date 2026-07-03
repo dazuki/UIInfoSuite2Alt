@@ -7,10 +7,7 @@ public static class ColorExtensions
 {
   public static Color Desaturate(this Color color, float desaturationFactor)
   {
-    float hue,
-      saturation,
-      lum;
-    ColorToHsl(color, out hue, out saturation, out lum);
+    ColorToHsl(color, out float hue, out float saturation, out float lum);
     float newSaturation = Math.Max(0, Math.Min(saturation * (1 - desaturationFactor), 1));
     Color newColor = HslToColor(hue, newSaturation, lum);
     newColor.A = color.A;
@@ -19,10 +16,7 @@ public static class ColorExtensions
 
   public static Color ShiftHue(this Color color, float degrees)
   {
-    float hue,
-      saturation,
-      lum;
-    ColorToHsl(color, out hue, out saturation, out lum);
+    ColorToHsl(color, out float hue, out float saturation, out float lum);
     hue += degrees / 360f;
     if (hue < 0)
       hue += 1f;

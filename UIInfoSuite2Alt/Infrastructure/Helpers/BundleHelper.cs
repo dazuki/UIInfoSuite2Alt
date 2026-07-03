@@ -12,9 +12,6 @@ using SObject = StardewValley.Object;
 
 namespace UIInfoSuite2Alt.Infrastructure.Helpers;
 
-// Maps qualified item ID (or category string) -> list of [bundleIdx, quantity, quality]
-using BundleIngredientsCache = Dictionary<string, List<List<int>>>;
-
 public record BundleRequiredItem(
   string Name,
   int BannerWidth,
@@ -28,7 +25,9 @@ public record BundleKeyData(string Name, int Color, string TexturePath, int Spri
 internal static class BundleHelper
 {
   private static readonly Dictionary<int, BundleKeyData> BundleIdToBundleKeyDataMap = [];
-  private static readonly BundleIngredientsCache AllBundleIngredients = [];
+
+  // Maps qualified item ID (or category string) -> list of [bundleIdx, quantity, quality]
+  private static readonly Dictionary<string, List<List<int>>> AllBundleIngredients = [];
   private static readonly Dictionary<int, int> BundleIdToAreaMap = [];
 
   /// <summary>When true, show bundle items for all CC areas regardless of room unlock state.</summary>
@@ -123,12 +122,14 @@ internal static class BundleHelper
 
     PopulateBundleCaches();
 
-    BundleRequiredItem? output;
-    List<List<int>>? bundleRequiredItemsList;
-
-    if (AllBundleIngredients.TryGetValue(donatedItem.QualifiedItemId, out bundleRequiredItemsList))
+    if (
+      AllBundleIngredients.TryGetValue(
+        donatedItem.QualifiedItemId,
+        out List<List<int>>? bundleRequiredItemsList
+      )
+    )
     {
-      output = GetBundleItemIfNotDonatedFromList(
+      BundleRequiredItem? output = GetBundleItemIfNotDonatedFromList(
         bundleRequiredItemsList,
         donatedItem,
         communityCenter
@@ -150,12 +151,7 @@ internal static class BundleHelper
       return null;
     }
 
-    output = GetBundleItemIfNotDonatedFromList(
-      bundleRequiredItemsList,
-      donatedItem,
-      communityCenter
-    );
-    return output;
+    return GetBundleItemIfNotDonatedFromList(bundleRequiredItemsList, donatedItem, communityCenter);
   }
 
   private static BundleRequiredItem? GetBundleItemIfNotDonatedFromList(
