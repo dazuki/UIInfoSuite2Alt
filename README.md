@@ -82,8 +82,10 @@
 > Most new features can be toggled on/off in the mod's in-game options menu.
 
 - **v2.8.33**
-  - Added [Launcher Drawer](https://www.nexusmods.com/stardewvalley/mods/48269) compatibility and a "UIIS2Alt" entry that opens the settings is added to the drawer (when GMCM is installed)
   - Birthday tooltips now show the first 6 loved gifts with a "+X more" hint; hold a keybind (default: Left Shift) to expand the full list
+  - Added [Launcher Drawer](https://www.nexusmods.com/stardewvalley/mods/48269) compatibility and a "UIIS2Alt" entry that opens the settings is added to the drawer (when GMCM is installed)
+  - Added some additional trace logging
+  - Fixed the birthday gift scan running 2-3x on birthday days (at day start and on GMCM saves)
 - **v2.8.32**
   - Mod authors can now give modded wild trees a custom name in tooltips/range overlays via the `UIIS2Alt/DisplayName` custom field on `Data/WildTrees` ([documentation](docs/wild-tree-names.md))
   - Effect range overlays now recognize modded scarecrows and sprinklers that follow vanilla conventions (e.g. the `crow_scare` context tag, or a Harmony-patched `GetBaseRadiusForSprinkler`)
