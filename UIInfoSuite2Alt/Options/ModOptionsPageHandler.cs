@@ -188,6 +188,7 @@ internal class ModOptionsPageHandler : IDisposable
 
     var luckOfDay = new ShowLuckOfDay(helper);
     var showBirthdayIcon = new ShowBirthdayIcon(helper);
+    showBirthdayIcon.InitDisableOnMaxFriendshipOption(config.HideBirthdayIfFullFriendShip);
     var showAccurateHearts = new ShowAccurateHearts();
     var showWhenAnimalNeedsPet = new ShowWhenAnimalNeedsPet(
       helper,

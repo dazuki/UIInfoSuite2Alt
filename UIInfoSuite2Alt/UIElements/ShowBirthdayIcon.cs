@@ -74,8 +74,19 @@ internal class ShowBirthdayIcon : IDisposable
 
   public void ToggleDisableOnMaxFriendshipOption(bool hideBirthdayIfFullFriendShip)
   {
+    if (HideBirthdayIfFullFriendShip == hideBirthdayIfFullFriendShip)
+    {
+      return;
+    }
+
     HideBirthdayIfFullFriendShip = hideBirthdayIfFullFriendShip;
     ToggleOption(Enabled);
+  }
+
+  /// <summary>Seed the flag before ToggleOption runs so the initial birthday scan isn't redone.</summary>
+  public void InitDisableOnMaxFriendshipOption(bool hideBirthdayIfFullFriendShip)
+  {
+    HideBirthdayIfFullFriendShip = hideBirthdayIfFullFriendShip;
   }
 
   public void ToggleStackedOption(bool useStackedBirthdayIcons)
@@ -103,6 +114,12 @@ internal class ShowBirthdayIcon : IDisposable
 
   private void OnDayStarted(object? sender, DayStartedEventArgs e)
   {
+    // A just-disposed instance can still receive the in-flight raise via SMAPI's handler snapshot.
+    if (!Enabled)
+    {
+      return;
+    }
+
     CheckForBirthday();
   }
 

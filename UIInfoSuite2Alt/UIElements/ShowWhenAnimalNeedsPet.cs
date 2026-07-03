@@ -61,6 +61,11 @@ internal class ShowWhenAnimalNeedsPet : IDisposable
 
   public void ToggleDisableOnMaxFriendshipOption(bool hideOnMaxFriendship)
   {
+    if (HideOnMaxFriendship == hideOnMaxFriendship)
+    {
+      return;
+    }
+
     HideOnMaxFriendship = hideOnMaxFriendship;
     ToggleOption(Enabled);
   }
