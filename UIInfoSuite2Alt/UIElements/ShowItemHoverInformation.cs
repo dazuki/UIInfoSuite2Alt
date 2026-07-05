@@ -240,13 +240,13 @@ internal class ShowItemHoverInformation : IDisposable
         {
           int pct = (int)Math.Round((producerBonus - 1f) * 100f);
           wolBonusPct = $"+{pct}% ";
-          wolBonusLabel = "Producer";
+          wolBonusLabel = WalkOfLifeHelper.GetProducerTitle();
         }
         else if (anglerBonus > 1f && IsFishProduct(hoveredObject))
         {
           int pct = (int)Math.Round((anglerBonus - 1f) * 100f);
           wolBonusPct = $"+{pct}% ";
-          wolBonusLabel = "Angler";
+          wolBonusLabel = WalkOfLifeHelper.GetAnglerTitle();
         }
       }
 

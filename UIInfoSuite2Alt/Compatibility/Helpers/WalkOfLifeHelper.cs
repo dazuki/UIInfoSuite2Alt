@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using StardewModdingAPI;
+using StardewValley;
 
 namespace UIInfoSuite2Alt.Compatibility.Helpers;
 
@@ -11,6 +12,7 @@ internal static class WalkOfLifeHelper
   private static bool _initialized;
   private static bool _prestigeEnabled;
   private static uint _expPerPrestigeLevel = 5000;
+  private static ITranslationHelper? _translations;
 
   /// <summary>Whether WoL prestige levels (11-20) are enabled.</summary>
   public static bool PrestigeEnabled => _prestigeEnabled;
@@ -24,11 +26,14 @@ internal static class WalkOfLifeHelper
     _initialized = false;
     _prestigeEnabled = false;
     _expPerPrestigeLevel = 5000;
+    _translations = null;
 
     if (!helper.ModRegistry.IsLoaded(ModCompat.WalkOfLife))
     {
       return;
     }
+
+    ResolveTranslations(helper);
 
     try
     {
@@ -91,6 +96,58 @@ internal static class WalkOfLifeHelper
       ModEntry.MonitorObject.Log(
         $"WalkOfLifeHelper: failed to read config.json, {ex.Message}",
         LogLevel.Warn
+      );
+    }
+  }
+
+  /// <summary>Localized Producer profession title, or English fallback.</summary>
+  public static string GetProducerTitle()
+  {
+    return GetProfessionTitle("producer", "Producer");
+  }
+
+  /// <summary>Localized Angler profession title, or English fallback.</summary>
+  public static string GetAnglerTitle()
+  {
+    return GetProfessionTitle("angler", "Angler");
+  }
+
+  /// <summary>Looks up a gendered profession title in WoL's own translations.</summary>
+  private static string GetProfessionTitle(string profession, string fallback)
+  {
+    if (_translations == null)
+    {
+      return fallback;
+    }
+
+    string gender = Game1.player?.IsMale == false ? "female" : "male";
+    return _translations.Get($"{profession}.title.{gender}").Default(fallback);
+  }
+
+  /// <summary>
+  /// Grabs WoL's ITranslationHelper via reflection (no supported SMAPI API for cross-mod
+  /// translations). Failure just means English fallback labels.
+  /// </summary>
+  private static void ResolveTranslations(IModHelper helper)
+  {
+    try
+    {
+      IModInfo? modInfo = helper.ModRegistry.Get(ModCompat.WalkOfLife);
+
+      // SMAPI's internal ModMetadata exposes the mod instance via a Mod property
+      var mod = modInfo?.GetType().GetProperty("Mod")?.GetValue(modInfo) as IMod;
+      _translations = mod?.Helper?.Translation;
+
+      ModEntry.MonitorObject.Log(
+        $"WalkOfLifeHelper: translations {(_translations != null ? "resolved" : "unavailable, using English labels")}",
+        LogLevel.Trace
+      );
+    }
+    catch (Exception ex)
+    {
+      ModEntry.MonitorObject.Log(
+        $"WalkOfLifeHelper: failed to resolve translations, using English labels, {ex.Message}",
+        LogLevel.Trace
       );
     }
   }
