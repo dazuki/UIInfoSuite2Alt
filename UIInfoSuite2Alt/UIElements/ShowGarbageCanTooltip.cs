@@ -127,7 +127,7 @@ internal class ShowGarbageCanTooltip : IDisposable
     _cachedTile.Value = tile;
   }
 
-  private static bool TryResolveGarbageCanId(GameLocation location, Vector2 tile, out string id)
+  internal static bool TryResolveGarbageCanId(GameLocation location, Vector2 tile, out string id)
   {
     id = string.Empty;
 

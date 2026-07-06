@@ -126,6 +126,8 @@ public partial class ModEntry : Mod
 
     ModConfig = Helper.ReadConfig<ModConfig>();
 
+    DebugCommandHandler.Register(helper, Monitor, ModManifest);
+
     helper.Events.Content.AssetRequested += OnAssetRequested;
     helper.Events.GameLoop.ReturnedToTitle += OnReturnedToTitle;
     helper.Events.GameLoop.DayStarted += OnDayStarted;
