@@ -81,6 +81,10 @@
 
 > Most new features can be toggled on/off in the mod's in-game options menu.
 
+- **v2.8.34**
+  - Added a `uiis2a` console command for debugging: `uiis2a config` exports current settings as ready-to-use JSON and `uiis2a prediction` shows garbage can/artifact spot/shaft predictions for the current location, including other mods patching the vanilla methods behind them.
+    - Eeach run also saves a timestamped file to the mod's `debug` folder
+  - Walk of Life profession labels in item tooltips now use Walk of Life's own translations instead of always showing English
 - **v2.8.33**
   - Birthday tooltips now show the first 6 loved gifts with a "+X more" hint; hold a keybind (default: Left Shift) to expand the full list
   - Added [Launcher Drawer](https://www.nexusmods.com/stardewvalley/mods/48269) compatibility and a "UIIS2Alt" entry that opens the settings is added to the drawer (when GMCM is installed)
