@@ -16,7 +16,7 @@ namespace UIInfoSuite2Alt.Infrastructure.Helpers;
 internal static class GarbageCanPredictor
 {
   private const string BinningMinLevelField = "drbirbdev.BinningSkill_MinLevel";
-  private const string BinningSkillId = "drbirbdev.Binning";
+  internal const string BinningSkillId = "drbirbdev.Binning";
 
   public static void Predict(
     GameLocation location,
@@ -26,12 +26,14 @@ internal static class GarbageCanPredictor
     out List<Item> items,
     out bool alreadyChecked,
     out int? lockedMinLevel,
+    out int? requiredBinningLevel,
     out bool fromGarbageDayChest
   )
   {
     items = [];
     alreadyChecked = false;
     lockedMinLevel = null;
+    requiredBinningLevel = null;
     fromGarbageDayChest = false;
 
     // GarbageDay: read actual pre-rolled items from the chest (may accumulate across days)
@@ -44,10 +46,14 @@ internal static class GarbageCanPredictor
 
     alreadyChecked = Game1.netWorldState.Value.CheckedGarbage.Contains(id);
 
-    if (TryGetBinningLockLevel(id, farmer, out int required))
+    if (TryGetBinningMinLevel(id, out int required))
     {
-      lockedMinLevel = required;
-      return;
+      requiredBinningLevel = required;
+      if (IsBinningLocked(farmer, required))
+      {
+        lockedMinLevel = required;
+        return;
+      }
     }
 
     if (
@@ -71,34 +77,21 @@ internal static class GarbageCanPredictor
     ModEntry.MonitorObject.Log($"GarbageCanPredictor: {message}", LogLevel.Trace);
   }
 
-  private static bool TryGetBinningLockLevel(string id, Farmer farmer, out int requiredLevel)
+  /// <summary>True if the can has a BinningSkill minimum-level custom field in Data/GarbageCans.</summary>
+  private static bool TryGetBinningMinLevel(string id, out int minLevel)
   {
-    requiredLevel = 0;
-
-    if (!ApiManager.GetApi(ModCompat.SpaceCore, out ISpaceCoreApi? spaceCore))
-    {
-      return false;
-    }
-
+    minLevel = 0;
     GarbageCanData data = DataLoader.GarbageCans(Game1.content);
-    if (
-      !data.GarbageCans.TryGetValue(id, out GarbageCanEntryData? entry)
-      || entry.CustomFields == null
-      || !entry.CustomFields.TryGetValue(BinningMinLevelField, out string? minLevelStr)
-      || !int.TryParse(minLevelStr, out int minLevel)
-      || minLevel <= 0
-    )
-    {
-      return false;
-    }
+    return data.GarbageCans.TryGetValue(id, out GarbageCanEntryData? entry)
+      && entry.CustomFields != null
+      && entry.CustomFields.TryGetValue(BinningMinLevelField, out string? minLevelStr)
+      && int.TryParse(minLevelStr, out minLevel)
+      && minLevel > 0;
+  }
 
-    int currentLevel = spaceCore.GetLevelForCustomSkill(farmer, BinningSkillId);
-    if (currentLevel >= minLevel)
-    {
-      return false;
-    }
-
-    requiredLevel = minLevel;
-    return true;
+  private static bool IsBinningLocked(Farmer farmer, int minLevel)
+  {
+    return ApiManager.GetApi(ModCompat.SpaceCore, out ISpaceCoreApi? spaceCore)
+      && spaceCore.GetLevelForCustomSkill(farmer, BinningSkillId) < minLevel;
   }
 }

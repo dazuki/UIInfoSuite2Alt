@@ -6,6 +6,7 @@ namespace UIInfoSuite2Alt.Compatibility;
 
 public static class ModCompat
 {
+  public const string ContentPatcher = "Pathoschild.ContentPatcher";
   public const string CustomBush = "furyx639.CustomBush";
   public const string Gmcm = "spacechase0.GenericModConfigMenu";
   public const string CloudySkies = "leclair.cloudyskies";

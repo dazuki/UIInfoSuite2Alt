@@ -116,6 +116,7 @@ internal class ShowGarbageCanTooltip : IDisposable
       out List<Item> items,
       out bool alreadyChecked,
       out int? lockedMinLevel,
+      out _,
       out bool fromGarbageDayChest
     );
 

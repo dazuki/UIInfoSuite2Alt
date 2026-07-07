@@ -10,6 +10,7 @@ using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
+using UIInfoSuite2Alt.Compatibility;
 using UIInfoSuite2Alt.Infrastructure.Helpers;
 using UIInfoSuite2Alt.Options;
 using UIInfoSuite2Alt.UIElements;
@@ -18,7 +19,7 @@ using Object = StardewValley.Object;
 
 namespace UIInfoSuite2Alt.Infrastructure;
 
-/// <summary>Registers the "uiis2a" console command family for debugging.</summary>
+/// <summary>Registers the "uiis" console command family for debugging.</summary>
 internal static class DebugCommandHandler
 {
   private static IModHelper _helper = null!;
@@ -33,8 +34,8 @@ internal static class DebugCommandHandler
     _harmonyId = manifest.UniqueID;
     _modVersion = manifest.Version.ToString();
     helper.ConsoleCommands.Add(
-      "uiis2a",
-      "UIInfoSuite2Alt debug commands. Run 'uiis2a help' for a list of subcommands.",
+      "uiis",
+      "UIInfoSuite2Alt debug commands. Run 'uiis help' for a list of subcommands.",
       HandleCommand
     );
   }
@@ -52,12 +53,12 @@ internal static class DebugCommandHandler
         case "config":
           ShowConfig();
           break;
-        case "prediction":
+        case "predict":
           ShowPrediction();
           break;
         default:
           _monitor.Log(
-            $"DebugCommandHandler: unknown subcommand '{sub}', run 'uiis2a help' for a list",
+            $"DebugCommandHandler: unknown subcommand '{sub}', run 'uiis help' for a list",
             LogLevel.Info
           );
           break;
@@ -87,11 +88,80 @@ internal static class DebugCommandHandler
   private static void AppendHeader(StringBuilder sb, string sub)
   {
     sb.AppendLine("{");
-    sb.AppendLine($"  // {sub} debug output");
-    sb.AppendLine($"  // version: {_modVersion}");
-    sb.AppendLine($"  // game: Stardew Valley {Game1.version} | SMAPI {Constants.ApiVersion}");
-    sb.AppendLine($"  // date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+    sb.AppendLine($"  // '{sub}' command debug output");
+    sb.AppendLine($"  // ");
+    sb.AppendLine($"  // uiis2a version: {_modVersion}");
+    sb.AppendLine($"  // ");
+    sb.AppendLine($"  // game: {Game1.version}");
+    sb.AppendLine($"  // smapi: {Constants.ApiVersion}");
+    sb.AppendLine($"  // contentpatcher: {GetModVersion(ModCompat.ContentPatcher)}");
+    sb.AppendLine($"  // spacecore: {GetModVersion(ModCompat.SpaceCore)}");
+    sb.AppendLine($"  // gmcm: {GetModVersion(ModCompat.Gmcm)}");
+    if (sub == "predict")
+    {
+      sb.AppendLine($"  // farmtypemanager: {GetModVersion(ModCompat.FarmTypeManager)}");
+      sb.AppendLine($"  // archaeologyskill: {GetModVersion(ModCompat.ArchaeologySkill)}");
+      AppendSkillInfo(
+        sb,
+        ModCompat.ArchaeologySkill,
+        ShowArtifactSpotTooltip.ArchaeologySkillId,
+        showAntiquarian: true
+      );
+      sb.AppendLine($"  // binningskill: {GetModVersion(ModCompat.BinningSkill)}");
+      AppendSkillInfo(
+        sb,
+        ModCompat.BinningSkill,
+        GarbageCanPredictor.BinningSkillId,
+        showAntiquarian: false
+      );
+    }
+
+    if (sub == "config")
+    {
+      sb.AppendLine($"  // ");
+      sb.AppendLine($"  // (this debug file can also replace the existing config.json file)");
+    }
+
     sb.AppendLine();
+  }
+
+  private static string GetModVersion(string modId)
+  {
+    return _helper.ModRegistry.Get(modId)?.Manifest.Version.ToString() ?? "(not found)";
+  }
+
+  /// <summary>Writes level (and optionally Antiquarian state) sub-lines for a SpaceCore skill mod.</summary>
+  private static void AppendSkillInfo(
+    StringBuilder sb,
+    string modId,
+    string skillId,
+    bool showAntiquarian
+  )
+  {
+    if (
+      !_helper.ModRegistry.IsLoaded(modId)
+      || !ApiManager.GetApi(ModCompat.SpaceCore, out ISpaceCoreApi? spaceCore)
+    )
+    {
+      return;
+    }
+
+    try
+    {
+      sb.AppendLine($"  //   - level: {spaceCore.GetLevelForCustomSkill(Game1.player, skillId)}");
+    }
+    catch (Exception ex)
+    {
+      sb.AppendLine($"  //   - level: (lookup failed: {ex.Message})");
+    }
+
+    if (showAntiquarian)
+    {
+      int? antiquarianId = ShowArtifactSpotTooltip.ResolveAntiquarianProfessionId(_helper);
+      bool active =
+        antiquarianId.HasValue && Game1.player.professions.Contains(antiquarianId.Value);
+      sb.AppendLine($"  //   - antiquarian: {(active ? "true" : "false")}");
+    }
   }
 
   private static string? WriteDebugFile(string sub, string content)
@@ -118,9 +188,9 @@ internal static class DebugCommandHandler
   {
     var sb = new StringBuilder();
     sb.AppendLine("Available subcommands:");
-    sb.AppendLine("  uiis2a config     - current config values");
+    sb.AppendLine("  uiis config  - current config values");
     sb.AppendLine(
-      "  uiis2a prediction - predictions for the current location (garbage cans, artifact spots, shafts)"
+      "  uiis predict - predictions for the current location (garbage cans, artifact spots, shafts)"
     );
     Output("help", sb);
   }
@@ -254,21 +324,36 @@ internal static class DebugCommandHandler
       .GetProperties(BindingFlags.Public | BindingFlags.Instance)
       .ToDictionary(p => p.Name);
 
-    var entries = new List<(string Group, string Name, string ValueJson)>();
+    var defaults = new ModConfig();
+    var entries = new List<(string Group, string Name, string ValueJson, string DefaultJson)>();
     foreach ((string group, string[] props) in _configGroups)
     {
       foreach (string name in props)
       {
         if (remaining.Remove(name, out PropertyInfo? prop))
         {
-          entries.Add((group, name, FormatJsonValue(prop.GetValue(ModEntry.ModConfig))));
+          entries.Add(
+            (
+              group,
+              name,
+              FormatJsonValue(prop.GetValue(ModEntry.ModConfig)),
+              FormatJsonValue(prop.GetValue(defaults))
+            )
+          );
         }
       }
     }
 
     foreach (PropertyInfo prop in remaining.Values)
     {
-      entries.Add(("Other", prop.Name, FormatJsonValue(prop.GetValue(ModEntry.ModConfig))));
+      entries.Add(
+        (
+          "Other",
+          prop.Name,
+          FormatJsonValue(prop.GetValue(ModEntry.ModConfig)),
+          FormatJsonValue(prop.GetValue(defaults))
+        )
+      );
     }
 
     var sb = new StringBuilder();
@@ -276,7 +361,7 @@ internal static class DebugCommandHandler
     string? currentGroup = null;
     for (int i = 0; i < entries.Count; i++)
     {
-      (string group, string name, string valueJson) = entries[i];
+      (string group, string name, string valueJson, string defaultJson) = entries[i];
       if (group != currentGroup)
       {
         if (currentGroup != null)
@@ -289,11 +374,19 @@ internal static class DebugCommandHandler
       }
 
       string comma = i < entries.Count - 1 ? "," : "";
-      sb.AppendLine($"  \"{name}\": {valueJson}{comma}");
+      string defaultNote =
+        valueJson == defaultJson ? "" : $" // default: {CompactJson(defaultJson)}";
+      sb.AppendLine($"  \"{name}\": {valueJson}{comma}{defaultNote}");
     }
 
     sb.AppendLine("}");
     OutputWithFile("config", sb);
+  }
+
+  /// <summary>Collapses a multi-line JSON value (e.g. IconOrder) to one line for trailing comments.</summary>
+  private static string CompactJson(string json)
+  {
+    return json.Contains('\n') ? string.Join(" ", json.Split('\n').Select(l => l.Trim())) : json;
   }
 
   private static string FormatJsonValue(object? value)
@@ -323,16 +416,13 @@ internal static class DebugCommandHandler
   {
     if (!Context.IsWorldReady || Game1.currentLocation == null)
     {
-      _monitor.Log(
-        "DebugCommandHandler: 'uiis2a prediction' requires a loaded save",
-        LogLevel.Info
-      );
+      _monitor.Log("DebugCommandHandler: 'uiis predict' requires a loaded save", LogLevel.Info);
       return;
     }
 
     GameLocation location = Game1.currentLocation;
     var sb = new StringBuilder();
-    AppendHeader(sb, "prediction");
+    AppendHeader(sb, "predict");
     sb.AppendLine("  // Context");
     sb.AppendLine($"  \"Location\": {J(location.NameOrUniqueName)},");
     sb.AppendLine($"  \"Farmer\": {J(Game1.player.Name)},");
@@ -352,6 +442,14 @@ internal static class DebugCommandHandler
 
     sb.AppendLine();
     sb.AppendLine("  // Artifact and seed spots");
+    int? antiquarianId = ShowArtifactSpotTooltip.ResolveAntiquarianProfessionId(_helper);
+    if (antiquarianId.HasValue && Game1.player.professions.Contains(antiquarianId.Value))
+    {
+      sb.AppendLine(
+        "  // (antiquarian bonus active: each dig also yields a bonus artifact not listed in Drops)"
+      );
+    }
+
     AppendArtifactSpotsJson(sb, location);
 
     if (location is MineShaft mine)
@@ -365,10 +463,10 @@ internal static class DebugCommandHandler
     }
 
     sb.AppendLine();
-    sb.AppendLine("  // Harmony patches by other mods");
+    sb.AppendLine("  // Harmony patches by other mods on vanilla methods used by predictions");
     AppendPredictionPatchesJson(sb);
     sb.AppendLine("}");
-    OutputWithFile("prediction", sb);
+    OutputWithFile("predict", sb);
   }
 
   private static void AppendGarbageCansJson(StringBuilder sb, GameLocation location)
@@ -411,6 +509,7 @@ internal static class DebugCommandHandler
         out List<Item> items,
         out bool alreadyChecked,
         out int? lockedMinLevel,
+        out int? requiredBinningLevel,
         out bool fromGarbageDayChest
       );
 
@@ -425,9 +524,10 @@ internal static class DebugCommandHandler
       );
 
       var props = new List<string> { $"\"AlreadyChecked\": {(alreadyChecked ? "true" : "false")}" };
-      if (lockedMinLevel != null)
+      if (requiredBinningLevel != null)
       {
-        props.Add($"\"LockedUntilBinningLevel\": {lockedMinLevel}");
+        props.Add($"\"BinningSkillRequired\": {requiredBinningLevel}");
+        props.Add($"\"BinningSkillUnlocked\": {(lockedMinLevel == null ? "true" : "false")}");
       }
 
       if (fromGarbageDayChest)
@@ -511,6 +611,18 @@ internal static class DebugCommandHandler
         AccessTools.Method(typeof(GameLocation), "digUpArtifactSpot")
       ),
       (
+        "GameLocation.tryToCreateUnseenSecretNote",
+        AccessTools.Method(typeof(GameLocation), nameof(GameLocation.tryToCreateUnseenSecretNote))
+      ),
+      (
+        "Object.performToolAction",
+        AccessTools.Method(typeof(Object), nameof(Object.performToolAction))
+      ),
+      (
+        "Utility.GetUnseenSecretNotes",
+        AccessTools.Method(typeof(Utility), nameof(Utility.GetUnseenSecretNotes))
+      ),
+      (
         "IslandLocation.digUpArtifactSpot",
         AccessTools.DeclaredMethod(typeof(IslandLocation), "digUpArtifactSpot")
       ),
@@ -518,14 +630,10 @@ internal static class DebugCommandHandler
         "DesertFestival.digUpArtifactSpot",
         AccessTools.DeclaredMethod(typeof(DesertFestival), "digUpArtifactSpot")
       ),
-      (
-        "Object.performToolAction",
-        AccessTools.Method(typeof(Object), nameof(Object.performToolAction))
-      ),
       ("MineShaft.enterMineShaft", AccessTools.Method(typeof(MineShaft), "enterMineShaft")),
     };
 
-    sb.AppendLine("  \"VanillaPredictionPatches\": {");
+    sb.AppendLine("  \"PatchedVanillaMethods\": {");
     for (int i = 0; i < checks.Length; i++)
     {
       (string label, MethodBase? method) = checks[i];
@@ -605,7 +713,8 @@ internal static class DebugCommandHandler
 
   private static string FormatItem(Item item)
   {
-    return item.Stack > 1 ? $"{item.DisplayName} x{item.Stack}" : item.DisplayName;
+    string stack = item.Stack > 1 ? $" x{item.Stack}" : "";
+    return $"{item.DisplayName}{stack} [{item.QualifiedItemId}]";
   }
 
   private static string FormatDrop(PredictedDrop drop)
@@ -613,7 +722,8 @@ internal static class DebugCommandHandler
     string text = FormatItem(drop.Item);
     if (drop.SecretNoteChance > 0f && drop.SecretNoteDisplayName != null)
     {
-      text += $" ({drop.SecretNoteChance:P0} chance of {drop.SecretNoteDisplayName})";
+      string noteId = drop.SecretNoteItemId != null ? $" [{drop.SecretNoteItemId}]" : "";
+      text += $" ({drop.SecretNoteChance:P0} chance of {drop.SecretNoteDisplayName}{noteId})";
     }
 
     return text;

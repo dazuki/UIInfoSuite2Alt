@@ -34,6 +34,7 @@ internal class ShowArtifactSpotTooltip : IDisposable
   // We show the profession icon in the tooltip corner when the player has it.
   private const string ArchaeologySkillIconAsset =
     "Mods/moonslime.ArchaeologySkill/interface/ArchaeologyiconBalt";
+  internal const string ArchaeologySkillId = "moonslime.Archaeology";
   private readonly int? _antiquarianProfessionId;
 
   public ShowArtifactSpotTooltip(IModHelper helper)
@@ -41,25 +42,31 @@ internal class ShowArtifactSpotTooltip : IDisposable
     _helper = helper;
     _hasFtm = helper.ModRegistry.IsLoaded(ModCompat.FarmTypeManager);
 
+    _antiquarianProfessionId = ResolveAntiquarianProfessionId(helper);
+  }
+
+  /// <summary>Resolves the Antiquarian profession id via SpaceCore, or null if unavailable.</summary>
+  internal static int? ResolveAntiquarianProfessionId(IModHelper helper)
+  {
     if (
-      helper.ModRegistry.IsLoaded(ModCompat.ArchaeologySkill)
-      && ApiManager.GetApi<ISpaceCoreApi>(ModCompat.SpaceCore, out ISpaceCoreApi? spaceCoreApi)
+      !helper.ModRegistry.IsLoaded(ModCompat.ArchaeologySkill)
+      || !ApiManager.GetApi<ISpaceCoreApi>(ModCompat.SpaceCore, out ISpaceCoreApi? spaceCoreApi)
     )
     {
-      try
-      {
-        _antiquarianProfessionId = spaceCoreApi.GetProfessionId(
-          "moonslime.Archaeology",
-          "Archaeology10a1"
-        );
-      }
-      catch (Exception ex)
-      {
-        ModEntry.MonitorObject.Log(
-          $"ShowArtifactSpotTooltip: failed to resolve Antiquarian profession, {ex.Message}",
-          LogLevel.Warn
-        );
-      }
+      return null;
+    }
+
+    try
+    {
+      return spaceCoreApi.GetProfessionId(ArchaeologySkillId, "Archaeology10a1");
+    }
+    catch (Exception ex)
+    {
+      ModEntry.MonitorObject.Log(
+        $"ShowArtifactSpotTooltip: failed to resolve Antiquarian profession, {ex.Message}",
+        LogLevel.Warn
+      );
+      return null;
     }
   }
 

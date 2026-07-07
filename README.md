@@ -82,8 +82,10 @@
 > Most new features can be toggled on/off in the mod's in-game options menu.
 
 - **v2.8.34**
-  - Added a `uiis2a` console command for debugging: `uiis2a config` exports current settings as ready-to-use JSON and `uiis2a prediction` shows garbage can/artifact spot/shaft predictions for the current location, including other mods patching the vanilla methods behind them.
-    - Eeach run also saves a timestamped file to the mod's `debug` folder
+  - Added a `uiis` console command for debugging: `uiis config` exports current settings as ready-to-use JSON and `uiis predict` shows garbage can/artifact spot/shaft predictions for the current location, including other mods patching the vanilla methods behind them.
+    - `uiis config` marks changed settings with their default value
+    - `uiis predict` includes qualified item ids, Binning Skill requirements per garbage can, and Archaeology/Binning skill info
+    - Each run also saves a timestamped file to the mod's `debug` folder
   - Walk of Life profession labels in item tooltips now use Walk of Life's own translations instead of always showing English
 - **v2.8.33**
   - Birthday tooltips now show the first 6 loved gifts with a "+X more" hint; hold a keybind (default: Left Shift) to expand the full list
