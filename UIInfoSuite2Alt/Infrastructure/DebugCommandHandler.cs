@@ -164,13 +164,27 @@ internal static class DebugCommandHandler
     }
   }
 
+  /// <summary>Strips invalid filename characters, falling back to "unknown" when empty.</summary>
+  private static string SanitizeFileName(string? name)
+  {
+    if (string.IsNullOrWhiteSpace(name))
+    {
+      return "unknown";
+    }
+
+    string cleaned = string.Concat(name.Where(c => !Path.GetInvalidFileNameChars().Contains(c)));
+    return string.IsNullOrWhiteSpace(cleaned) ? "unknown" : cleaned;
+  }
+
   private static string? WriteDebugFile(string sub, string content)
   {
     try
     {
       string dir = Path.Combine(_helper.DirectoryPath, "debug");
       Directory.CreateDirectory(dir);
-      string path = Path.Combine(dir, $"{sub}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.json");
+      // Predictions are unique per farmer, so tag the file with the farmer name.
+      string farmer = sub == "predict" ? $"_{SanitizeFileName(Game1.player?.Name)}" : "";
+      string path = Path.Combine(dir, $"{sub}{farmer}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.json");
       File.WriteAllText(path, content);
       return path;
     }
