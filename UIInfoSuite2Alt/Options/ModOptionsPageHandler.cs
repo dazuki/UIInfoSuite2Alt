@@ -762,6 +762,16 @@ internal class ModOptionsPageHandler : IDisposable
     );
     _currentTarget.Add(
       new ModOptionsCheckbox(
+        _helper.SafeGetString(nameof(config.ShowChestTooltip)),
+        whichOption++,
+        _ => { },
+        () => config.ShowChestTooltip,
+        Set(v => config.ShowChestTooltip = v),
+        showWorldTooltipCheckbox
+      )
+    );
+    _currentTarget.Add(
+      new ModOptionsCheckbox(
         _helper.SafeGetString(nameof(config.ShowArtifactSpotTooltip)),
         whichOption++,
         showArtifactSpotTooltip.ToggleOption,

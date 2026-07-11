@@ -87,6 +87,7 @@ public class ModConfig
   public KeybindList AnimalBuildingTooltipKeybind { get; set; } =
     KeybindList.ForSingle(SButton.LeftControl);
   public bool ShowForageableTooltip { get; set; } = true;
+  public bool ShowChestTooltip { get; set; } = true;
   public bool ShowArtifactSpotTooltip { get; set; } = true;
   public bool ShowGarbageCanTooltip { get; set; } = true;
   public bool ShowShaftDestination { get; set; } = true;

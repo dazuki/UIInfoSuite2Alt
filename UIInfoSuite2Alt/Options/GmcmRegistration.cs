@@ -489,6 +489,11 @@ public partial class ModEntry
       v => ModConfig.ShowForageableTooltip = v
     );
     AddSubBool(
+      nameof(ModConfig.ShowChestTooltip),
+      () => ModConfig.ShowChestTooltip,
+      v => ModConfig.ShowChestTooltip = v
+    );
+    AddSubBool(
       nameof(ModConfig.ShowArtifactSpotTooltip),
       () => ModConfig.ShowArtifactSpotTooltip,
       v => ModConfig.ShowArtifactSpotTooltip = v

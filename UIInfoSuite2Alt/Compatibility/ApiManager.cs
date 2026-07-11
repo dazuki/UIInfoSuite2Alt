@@ -42,6 +42,7 @@ public static class ModCompat
   public const string GarbageDay = "furyx639.GarbageDay";
   public const string CustomMuseumFramework = "Spiderbuttons.CMF";
   public const string LauncherDrawer = "aedenthorn.LauncherDrawer";
+  public const string ChestsAnywhere = "Pathoschild.ChestsAnywhere";
 
   // original UIInfoSuite variants
   public const string UIInfoSuite2 = "Annosz.UiInfoSuite2";

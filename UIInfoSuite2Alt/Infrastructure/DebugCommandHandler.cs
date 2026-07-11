@@ -283,6 +283,7 @@ internal static class DebugCommandHandler
         "ShowFishPondTooltip",
         "ShowAnimalBuildingTooltip",
         "ShowForageableTooltip",
+        "ShowChestTooltip",
         "ShowArtifactSpotTooltip",
         "ShowGarbageCanTooltip",
         "ShowShaftDestination",

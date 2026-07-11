@@ -13,6 +13,7 @@ using StardewValley.Buildings;
 using StardewValley.GameData.FarmAnimals;
 using StardewValley.GameData.FishPonds;
 using StardewValley.GameData.Machines;
+using StardewValley.Inventories;
 using StardewValley.ItemTypeDefinitions;
 using StardewValley.Menus;
 using StardewValley.Objects;
@@ -36,6 +37,7 @@ internal readonly struct HoverSegment
   public float SpriteScale { get; }
   public Rectangle? OverlaySourceRect { get; init; }
   public float TrailingGap { get; init; }
+  public float TextYOffset { get; init; }
 
   public HoverSegment(string text, Color? color = null)
   {
@@ -130,8 +132,17 @@ internal class ShowTileTooltips : IDisposable
   private readonly PerScreen<Rectangle?> _cachedSpriteRect = new();
   private readonly PerScreen<int> _cachedQuality = new(() => -1);
 
+  // Chests Anywhere's name for the hovered chest (null when it draws no box); used to size the shift below it.
+  private readonly PerScreen<string?> _cachedCaChestName = new();
+
+  // Composited colored-chest icons, keyed by item id + packed color.
+  private readonly Dictionary<(string ItemId, uint Color), Texture2D> _coloredChestIcons = new();
+
   private readonly IModHelper _helper;
   private readonly ShowItemEffectRanges _itemEffectRanges;
+
+  // Chests Anywhere shows its own name box for named chests; the name line is dropped to avoid duplicates.
+  private readonly bool _chestsAnywhereLoaded;
   private readonly Lazy<Texture2D> _wildTreeTexture;
   private static readonly Lazy<Texture2D> _petIconTexture = new(CreatePetIcon);
   private bool ShowCropTooltip => ModEntry.ModConfig.ShowCropTooltip;
@@ -140,12 +151,14 @@ internal class ShowTileTooltips : IDisposable
   private bool ShowFishPondTooltip => ModEntry.ModConfig.ShowFishPondTooltip;
   private bool ShowAnimalBuildingTooltip => ModEntry.ModConfig.ShowAnimalBuildingTooltip;
   private bool ShowForageableTooltip => ModEntry.ModConfig.ShowForageableTooltip;
+  private bool ShowChestTooltip => ModEntry.ModConfig.ShowChestTooltip;
   private bool ShowHarvestQuality => ModEntry.ModConfig.ShowHarvestQuality;
 
   public ShowTileTooltips(IModHelper helper, ShowItemEffectRanges itemEffectRanges)
   {
     _helper = helper;
     _itemEffectRanges = itemEffectRanges;
+    _chestsAnywhereLoaded = helper.ModRegistry.IsLoaded(ModCompat.ChestsAnywhere);
 
     _wildTreeTexture = new Lazy<Texture2D>(() =>
       AssetHelper.TryLoadTexture(_helper, "assets/wild_tree_tooltip.png")
@@ -203,6 +216,12 @@ internal class ShowTileTooltips : IDisposable
 
     if (!enabled)
     {
+      foreach (Texture2D icon in _coloredChestIcons.Values)
+      {
+        icon.Dispose();
+      }
+
+      _coloredChestIcons.Clear();
       return;
     }
 
@@ -290,6 +309,7 @@ internal class ShowTileTooltips : IDisposable
     TerrainFeature? terrain = _currentTerrain.Value;
 
     int predictedQuality = -1;
+    string? caChestName = null;
 
     if (
       ShowBarrelTooltip
@@ -455,6 +475,43 @@ internal class ShowTileTooltips : IDisposable
       }
     }
 
+    // Player storage chest: filled/total slots
+    if (
+      ShowChestTooltip
+      && currentTile is Chest { playerChest.Value: true } chest
+      && lines.Count == 0
+    )
+    {
+      IInventory items = chest.GetItemsForPlayer();
+      int filled = 0;
+      for (int i = 0; i < items.Count; i++)
+      {
+        if (items[i] != null)
+        {
+          filled++;
+        }
+      }
+
+      int capacity = chest.GetActualCapacity();
+      // Filled count only: yellow above 75% full, red when full.
+      Color? filledColor =
+        filled >= capacity ? NotWateredColor
+        : filled * 4 > capacity * 3 ? WaitingColor
+        : null;
+
+      lines.Add(
+        new HoverLine(
+          new HoverSegment(filled.ToString(), filledColor) { TextYOffset = 4f },
+          new HoverSegment($"/{capacity}") { TextYOffset = 4f }
+        )
+      );
+      anchorWorld = currentTile.TileLocation * Game1.tileSize;
+
+      // Remember the CA name so the box can shift below CA's (sized in OnRenderingHud).
+      chest.modData.TryGetValue($"{ModCompat.ChestsAnywhere}/Name", out string? caName);
+      caChestName = _chestsAnywhereLoaded && !string.IsNullOrWhiteSpace(caName) ? caName : null;
+    }
+
     if (lines.Count <= 0)
     {
       _cachedLines.Value = null;
@@ -472,6 +529,7 @@ internal class ShowTileTooltips : IDisposable
     _cachedSprite.Value = spriteTexture;
     _cachedSpriteRect.Value = spriteSourceRect;
     _cachedQuality.Value = predictedQuality;
+    _cachedCaChestName.Value = caChestName;
   }
 
   // Per-frame: position the cached tooltip (viewport scrolls every frame) and draw it.
@@ -499,6 +557,18 @@ internal class ShowTileTooltips : IDisposable
       overrideY = (int)(screenTile.Y + Utility.ModifyCoordinateForUIScale(32));
     }
 
+    // Shift below CA's name box (at cursor + tileSize/2). Mirror CA's wrap so multi-line names still clear.
+    int extraYOffset = 0;
+    string? caChestName = _cachedCaChestName.Value;
+    if (caChestName != null)
+    {
+      float boxX = Game1.getMouseX() + Game1.tileSize / 2f;
+      float wrapWidth = Math.Max(1f, Game1.uiViewport.Width - boxX - Game1.tileSize / 2f);
+      string wrapped = Game1.parseText(caChestName, Game1.smallFont, (int)wrapWidth);
+      const int caBoxPadding = 27; // CommonHelper.DrawHoverBox paddingSize
+      extraYOffset = (int)Game1.smallFont.MeasureString(wrapped).Y + caBoxPadding + 8;
+    }
+
     DrawColoredHoverText(
       Game1.spriteBatch,
       lines,
@@ -507,8 +577,47 @@ internal class ShowTileTooltips : IDisposable
       overrideY,
       _cachedSprite.Value,
       _cachedSpriteRect.Value,
-      _cachedQuality.Value
+      _cachedQuality.Value,
+      extraYOffset
     );
+  }
+
+  // Render a painted chest's icon into a cached target via the chest's own draw code; null for unpainted
+  // chests. Runs on the update tick, so the render-target swap stays off the per-frame draw path.
+  private Texture2D? GetColoredChestIcon(Chest chest)
+  {
+    Color color = chest.playerChoiceColor.Value;
+    if (color.Equals(Color.Black))
+    {
+      return null;
+    }
+
+    var key = (chest.QualifiedItemId, color.PackedValue);
+    if (_coloredChestIcons.TryGetValue(key, out Texture2D? cached))
+    {
+      return cached;
+    }
+
+    GraphicsDevice device = Game1.graphics.GraphicsDevice;
+    RenderTargetBinding[] previousTargets = device.GetRenderTargets();
+    var target = new RenderTarget2D(device, 64, 128);
+    try
+    {
+      device.SetRenderTarget(target);
+      device.Clear(Color.Transparent);
+      using var batch = new SpriteBatch(device);
+      batch.Begin(SpriteSortMode.FrontToBack, BlendState.AlphaBlend, SamplerState.PointClamp);
+      // local: true draws at (x, y - 64); (0, 64) puts the top-left at the target origin.
+      chest.draw(batch, 0, 64, 1f, local: true);
+      batch.End();
+    }
+    finally
+    {
+      device.SetRenderTargets(previousTargets);
+    }
+
+    _coloredChestIcons[key] = target;
+    return target;
   }
 
   private (Texture2D? Texture, Rectangle? SourceRect) GetTooltipSprite(
@@ -568,6 +677,18 @@ internal class ShowTileTooltips : IDisposable
       )
     )
     {
+      return FromItemData(ItemRegistry.GetData(tileObject.QualifiedItemId));
+    }
+
+    // Player storage chest: chest icon, colored if painted
+    if (tileObject is Chest { playerChest.Value: true } chestObject)
+    {
+      Texture2D? coloredIcon = GetColoredChestIcon(chestObject);
+      if (coloredIcon != null)
+      {
+        return (coloredIcon, new Rectangle(0, 0, coloredIcon.Width, coloredIcon.Height));
+      }
+
       return FromItemData(ItemRegistry.GetData(tileObject.QualifiedItemId));
     }
 
@@ -675,7 +796,8 @@ internal class ShowTileTooltips : IDisposable
     int overrideY = -1,
     Texture2D? spriteTexture = null,
     Rectangle? spriteSourceRect = null,
-    int quality = -1
+    int quality = -1,
+    int extraYOffset = 0
   )
   {
     const int spriteSize = 32;
@@ -758,6 +880,8 @@ internal class ShowTileTooltips : IDisposable
     {
       y = overrideY;
     }
+
+    y += extraYOffset;
 
     Rectangle safeArea = Utility.getSafeArea();
     if (x + width > safeArea.Right)
@@ -844,7 +968,7 @@ internal class ShowTileTooltips : IDisposable
         if (segment.Text.Length > 0)
         {
           Color segColor = segment.Color ?? defaultColor;
-          Vector2 pos = new(segX, lineY);
+          Vector2 pos = new(segX, lineY + segment.TextYOffset);
           Tools.DrawShadowedText(b, font, segment.Text, pos, segColor, shadowColor);
           segX += font.MeasureString(segment.Text).X;
         }

@@ -200,6 +200,7 @@
   "ShowFishPondTooltip": "Show fish pond tooltip",
   "ShowAnimalBuildingTooltip": "Show animal building tooltip",
   "ShowForageableTooltip": "Show forageable/mineral tooltip",
+  "ShowChestTooltip": "Show chest fill count",
   "ShowArtifactSpotTooltip": "Show artifact spot tooltip",
   "ShowGarbageCanTooltip": "Show garbage can tooltip",
   "GarbageCan.NothingToday": "Nothing here...",
