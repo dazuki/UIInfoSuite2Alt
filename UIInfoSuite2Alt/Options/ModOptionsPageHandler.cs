@@ -189,6 +189,7 @@ internal class ModOptionsPageHandler : IDisposable
     var luckOfDay = new ShowLuckOfDay(helper);
     var showBirthdayIcon = new ShowBirthdayIcon(helper);
     showBirthdayIcon.InitDisableOnMaxFriendshipOption(config.HideBirthdayIfFullFriendShip);
+    showBirthdayIcon.InitShowUnmetVillagersOption(config.ShowBirthdaysForUnmetVillagers);
     var showAccurateHearts = new ShowAccurateHearts();
     var showWhenAnimalNeedsPet = new ShowWhenAnimalNeedsPet(
       helper,
@@ -426,6 +427,16 @@ internal class ModOptionsPageHandler : IDisposable
         showBirthdayIcon.ToggleStackedOption,
         () => config.UseStackedBirthdayIcons,
         Set(v => config.UseStackedBirthdayIcons = v),
+        birthdayIcon
+      )
+    );
+    _currentTarget.Add(
+      new ModOptionsCheckbox(
+        _helper.SafeGetString(nameof(config.ShowBirthdaysForUnmetVillagers)),
+        whichOption++,
+        showBirthdayIcon.ToggleShowUnmetVillagersOption,
+        () => config.ShowBirthdaysForUnmetVillagers,
+        Set(v => config.ShowBirthdaysForUnmetVillagers = v),
         birthdayIcon
       )
     );

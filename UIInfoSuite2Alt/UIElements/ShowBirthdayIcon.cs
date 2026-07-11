@@ -7,6 +7,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewValley;
+using StardewValley.GameData.Characters;
 using StardewValley.Menus;
 using UIInfoSuite2Alt.Infrastructure;
 using UIInfoSuite2Alt.Infrastructure.Extensions;
@@ -32,11 +33,18 @@ internal class ShowBirthdayIcon : IDisposable
     new Dictionary<string, List<Item>>()
   );
 
+  // Birthday NPCs hidden today only because the player hasn't met them yet; re-scanned once
+  // any of them becomes met (talking adds a friendshipData entry) so the icon appears same-day.
+  private readonly PerScreen<HashSet<string>> _pendingUnmetBirthdayNpcs = new(() =>
+    new HashSet<string>()
+  );
+
   private readonly record struct LovedGift(Item Item, bool InInventory);
 
   private bool Enabled { get; set; }
   private bool HideBirthdayIfFullFriendShip { get; set; }
   private bool UseStackedBirthdayIcons { get; set; }
+  private bool ShowUnmetVillagers { get; set; } = true;
   private bool ShowUnrevealedLoves { get; set; } = true;
   private readonly IModHelper _helper;
   #endregion
@@ -89,6 +97,23 @@ internal class ShowBirthdayIcon : IDisposable
     HideBirthdayIfFullFriendShip = hideBirthdayIfFullFriendShip;
   }
 
+  /// <summary>Seed the flag before ToggleOption runs so the initial birthday scan isn't redone.</summary>
+  public void InitShowUnmetVillagersOption(bool showUnmetVillagers)
+  {
+    ShowUnmetVillagers = showUnmetVillagers;
+  }
+
+  public void ToggleShowUnmetVillagersOption(bool showUnmetVillagers)
+  {
+    if (ShowUnmetVillagers == showUnmetVillagers)
+    {
+      return;
+    }
+
+    ShowUnmetVillagers = showUnmetVillagers;
+    ToggleOption(Enabled);
+  }
+
   public void ToggleStackedOption(bool useStackedBirthdayIcons)
   {
     UseStackedBirthdayIcons = useStackedBirthdayIcons;
@@ -109,6 +134,7 @@ internal class ShowBirthdayIcon : IDisposable
     if (e.IsOneSecond)
     {
       CheckForGiftGiven();
+      CheckForNewlyMetBirthdayNpc();
     }
   }
 
@@ -194,37 +220,71 @@ internal class ShowBirthdayIcon : IDisposable
     }
   }
 
+  private void CheckForNewlyMetBirthdayNpc()
+  {
+    HashSet<string> pending = _pendingUnmetBirthdayNpcs.Value;
+    if (pending.Count == 0)
+    {
+      return;
+    }
+
+    foreach (string name in pending)
+    {
+      if (Game1.player.friendshipData.ContainsKey(name))
+      {
+        CheckForBirthday();
+        return;
+      }
+    }
+  }
+
   private void CheckForBirthday()
   {
     _birthdayNPCs.Value.Clear();
     _birthdayIcons.Value.Clear();
     _lovedGiftsByNpc.Value.Clear();
     _lovedItemsByNpc.Value.Clear();
+    _pendingUnmetBirthdayNpcs.Value.Clear();
     HashSet<string> seen = new();
-    foreach (GameLocation? location in Game1.locations)
+    // ForEachVillager walks building interiors too (includeInteriors), so NPCs living in
+    // modded interiors (RSV, SVE) are scanned; Game1.locations alone skips those.
+    Utility.ForEachVillager(character =>
     {
-      foreach (NPC? character in location.characters)
+      if (character.isBirthday() && seen.Add(character.Name))
       {
-        if (character.isBirthday() && seen.Add(character.Name))
+        // Match the vanilla calendar's visibility (Billboard.GetBirthdays): hide NPCs flagged
+        // Calendar=HiddenAlways (e.g. VMV's Rayan) entirely.
+        bool met = Game1.player.friendshipData.ContainsKey(character.Name);
+        CalendarBehavior? calendar = character.GetData()?.Calendar;
+        if (calendar == CalendarBehavior.HiddenAlways)
         {
-          Friendship? friendship = GetFriendshipWithNPC(character.Name);
-          if (friendship != null)
-          {
-            if (
-              HideBirthdayIfFullFriendShip
-              && friendship.Points
-                >= Utility.GetMaximumHeartsForCharacter(character)
-                  * NPC.friendshipPointsPerHeartLevel
-            )
-            {
-              continue;
-            }
+          return true;
+        }
 
-            _birthdayNPCs.Value.Add(character);
-          }
+        // Defer NPCs hidden only because they're unmet: HiddenUntilMet (calendar-gated on
+        // meeting) or, when the option is off, any unmet villager. Track them so the
+        // one-second tick re-scans and shows the icon the moment the player meets them.
+        if (!met && (calendar == CalendarBehavior.HiddenUntilMet || !ShowUnmetVillagers))
+        {
+          _pendingUnmetBirthdayNpcs.Value.Add(character.Name);
+          return true;
+        }
+
+        // Null friendship (unmet AlwaysShown NPC) renders as 0 hearts in the tooltip.
+        Friendship? friendship = GetFriendshipWithNPC(character.Name);
+        bool atMaxFriendship =
+          HideBirthdayIfFullFriendShip
+          && friendship != null
+          && friendship.Points
+            >= Utility.GetMaximumHeartsForCharacter(character) * NPC.friendshipPointsPerHeartLevel;
+        if (!atMaxFriendship)
+        {
+          _birthdayNPCs.Value.Add(character);
         }
       }
-    }
+
+      return true;
+    });
 
     if (_birthdayNPCs.Value.Count > 0)
     {

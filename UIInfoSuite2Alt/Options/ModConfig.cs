@@ -124,6 +124,7 @@ public class ModConfig
   public bool ShowSeasonalBerryHazelnut { get; set; } = true;
   public bool HideBirthdayIfFullFriendShip { get; set; } = true;
   public bool UseStackedBirthdayIcons { get; set; } = false;
+  public bool ShowBirthdaysForUnmetVillagers { get; set; } = true;
   public bool ShowUnrevealedBirthdayLoves { get; set; } = true;
   public KeybindList ExpandBirthdayLovesKeybind { get; set; } =
     KeybindList.ForSingle(SButton.LeftShift);

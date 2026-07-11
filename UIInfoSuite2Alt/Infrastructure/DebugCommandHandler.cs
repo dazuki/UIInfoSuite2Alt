@@ -245,6 +245,7 @@ internal static class DebugCommandHandler
         "ShowBirthdayIcon",
         "HideBirthdayIfFullFriendShip",
         "UseStackedBirthdayIcons",
+        "ShowBirthdaysForUnmetVillagers",
         "ShowUnrevealedBirthdayLoves",
         "ShowTravelingMerchant",
         "HideMerchantWhenVisited",

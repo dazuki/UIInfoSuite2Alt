@@ -242,6 +242,7 @@
   "ShowBirthdayIcon": "Show Birthday icon",
   "HideBirthdayIfFullFriendShip": "Hide on max friendship",
   "UseStackedBirthdayIcons": "Stack multiple birthdays",
+  "ShowBirthdaysForUnmetVillagers": "Show unmet villagers",
   "ShowUnrevealedBirthdayLoves": "Show loved gifts in tooltip",
   "ShowUnrevealedBirthdayLoves.Note": "Note: Lists only loved gifts you already\nown (inventory, chests, etc.), not every\ngift the NPC loves. Items in your backpack\nshow in green and are listed first.",
   "ShowTravelingMerchant": "Show Traveling Merchant",

@@ -82,6 +82,8 @@
 > Most new features can be toggled on/off in the mod's in-game options menu.
 
 - **v2.8.35**
+  - Added a "Show unmet villagers" birthday option for icons (Default: On)
+    - When Off, birthday icons only show for villagers you've met (the icon will appear the moment you talk to them on their birthday)
   - Golden Walnut tracker no longer shows in non-island locations that reuse the "Island" context
   - Animal building (barn/coop) tooltip now shifts above [One Click Shed Reloader](https://www.nexusmods.com/stardewvalley/mods/2052)'s tooltip so they no longer overlap
 - **v2.8.34**

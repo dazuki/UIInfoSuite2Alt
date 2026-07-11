@@ -295,6 +295,11 @@ public partial class ModEntry
       v => ModConfig.UseStackedBirthdayIcons = v
     );
     AddSubBool(
+      nameof(ModConfig.ShowBirthdaysForUnmetVillagers),
+      () => ModConfig.ShowBirthdaysForUnmetVillagers,
+      v => ModConfig.ShowBirthdaysForUnmetVillagers = v
+    );
+    AddSubBool(
       nameof(ModConfig.ShowUnrevealedBirthdayLoves),
       () => ModConfig.ShowUnrevealedBirthdayLoves,
       v => ModConfig.ShowUnrevealedBirthdayLoves = v
