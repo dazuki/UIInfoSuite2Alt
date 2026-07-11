@@ -43,6 +43,7 @@ public static class ModCompat
   public const string CustomMuseumFramework = "Spiderbuttons.CMF";
   public const string LauncherDrawer = "aedenthorn.LauncherDrawer";
   public const string ChestsAnywhere = "Pathoschild.ChestsAnywhere";
+  public const string OneClickShedReloader = "BitwiseJonMods.OneClickShedReloader";
 
   // original UIInfoSuite variants
   public const string UIInfoSuite2 = "Annosz.UiInfoSuite2";

@@ -135,6 +135,10 @@ internal class ShowTileTooltips : IDisposable
   // Chests Anywhere's name for the hovered chest (null when it draws no box); used to size the shift below it.
   private readonly PerScreen<string?> _cachedCaChestName = new();
 
+  // Pixels to lift the animal-building box so it clears One Click Shed Reloader's own barn/coop
+  // tooltip drawn at the cursor. 0 = no shift.
+  private readonly PerScreen<int> _cachedShiftUpAmount = new();
+
   // Composited colored-chest icons, keyed by item id + packed color.
   private readonly Dictionary<(string ItemId, uint Color), Texture2D> _coloredChestIcons = new();
 
@@ -143,6 +147,7 @@ internal class ShowTileTooltips : IDisposable
 
   // Chests Anywhere shows its own name box for named chests; the name line is dropped to avoid duplicates.
   private readonly bool _chestsAnywhereLoaded;
+  private readonly bool _oneClickShedReloaderLoaded;
   private readonly Lazy<Texture2D> _wildTreeTexture;
   private static readonly Lazy<Texture2D> _petIconTexture = new(CreatePetIcon);
   private bool ShowCropTooltip => ModEntry.ModConfig.ShowCropTooltip;
@@ -159,6 +164,7 @@ internal class ShowTileTooltips : IDisposable
     _helper = helper;
     _itemEffectRanges = itemEffectRanges;
     _chestsAnywhereLoaded = helper.ModRegistry.IsLoaded(ModCompat.ChestsAnywhere);
+    _oneClickShedReloaderLoaded = helper.ModRegistry.IsLoaded(ModCompat.OneClickShedReloader);
 
     _wildTreeTexture = new Lazy<Texture2D>(() =>
       AssetHelper.TryLoadTexture(_helper, "assets/wild_tree_tooltip.png")
@@ -310,6 +316,7 @@ internal class ShowTileTooltips : IDisposable
 
     int predictedQuality = -1;
     string? caChestName = null;
+    int shiftUpAmount = 0;
 
     if (
       ShowBarrelTooltip
@@ -348,6 +355,14 @@ internal class ShowTileTooltips : IDisposable
         anchorWorld =
           new Vector2(currentTileBuilding.tileX.Value, currentTileBuilding.tileY.Value)
           * Game1.tileSize;
+
+        // Lift the box above One Click Shed Reloader's cursor tooltip by the collapsed height, so the
+        // top anchor is unchanged whether collapsed or expanded (expanded just grows downward).
+        if (_oneClickShedReloaderLoaded)
+        {
+          int collapsedHeight = Math.Max(66, 2 * Game1.smallFont.LineSpacing + 38);
+          shiftUpAmount = collapsedHeight + 8;
+        }
       }
     }
 
@@ -530,6 +545,7 @@ internal class ShowTileTooltips : IDisposable
     _cachedSpriteRect.Value = spriteSourceRect;
     _cachedQuality.Value = predictedQuality;
     _cachedCaChestName.Value = caChestName;
+    _cachedShiftUpAmount.Value = shiftUpAmount;
   }
 
   // Per-frame: position the cached tooltip (viewport scrolls every frame) and draw it.
@@ -578,7 +594,8 @@ internal class ShowTileTooltips : IDisposable
       _cachedSprite.Value,
       _cachedSpriteRect.Value,
       _cachedQuality.Value,
-      extraYOffset
+      extraYOffset,
+      _cachedShiftUpAmount.Value
     );
   }
 
@@ -797,7 +814,8 @@ internal class ShowTileTooltips : IDisposable
     Texture2D? spriteTexture = null,
     Rectangle? spriteSourceRect = null,
     int quality = -1,
-    int extraYOffset = 0
+    int extraYOffset = 0,
+    int shiftUpAmount = 0
   )
   {
     const int spriteSize = 32;
@@ -883,6 +901,9 @@ internal class ShowTileTooltips : IDisposable
 
     y += extraYOffset;
 
+    // Lift the box above the cursor anchor so it clears a mod tooltip drawn there.
+    y -= shiftUpAmount;
+
     Rectangle safeArea = Utility.getSafeArea();
     if (x + width > safeArea.Right)
     {
@@ -899,6 +920,11 @@ internal class ShowTileTooltips : IDisposable
       }
 
       y = safeArea.Bottom - height;
+    }
+
+    if (y < safeArea.Top)
+    {
+      y = safeArea.Top;
     }
 
     width += 4;

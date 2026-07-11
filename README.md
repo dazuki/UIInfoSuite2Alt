@@ -82,7 +82,8 @@
 > Most new features can be toggled on/off in the mod's in-game options menu.
 
 - **v2.8.35**
-  - Golden Walnut tracker no longer shows in non-island locations that reuse the "Island" context (e.g. SVE's Enchanted Grove)
+  - Golden Walnut tracker no longer shows in non-island locations that reuse the "Island" context
+  - Animal building (barn/coop) tooltip now shifts above [One Click Shed Reloader](https://www.nexusmods.com/stardewvalley/mods/2052)'s tooltip so they no longer overlap
 - **v2.8.34**
   - Added a chest fill-count tooltip (compatability with Chests Anywhere tooltip)
   - Added a `uiis` console command for debugging (displays JSON with additional debug comments):
@@ -444,6 +445,7 @@ The compatability ranges from small fixes to bigger integration with mod provide
 - [Custom Museum Framework](https://www.nexusmods.com/stardewvalley/mods/34530)
 - [Launcher Drawer](https://www.nexusmods.com/stardewvalley/mods/48269)
 - [Chests Anywhere](https://www.nexusmods.com/stardewvalley/mods/518)
+- [One Click Shed Reloader](https://www.nexusmods.com/stardewvalley/mods/2052)
 
 <p align="center">
   <a href="https://ko-fi.com/dazuki89" target="_BLANK">
