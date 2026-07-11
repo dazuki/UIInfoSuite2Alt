@@ -8,9 +8,12 @@ using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.GameData.Characters;
+using StardewValley.Internal;
 using StardewValley.Menus;
+using StardewValley.Objects;
 using UIInfoSuite2Alt.Infrastructure;
 using UIInfoSuite2Alt.Infrastructure.Extensions;
+using Object = StardewValley.Object;
 
 namespace UIInfoSuite2Alt.UIElements;
 
@@ -328,21 +331,61 @@ internal class ShowBirthdayIcon : IDisposable
     ids.Clear();
     invIds.Clear();
 
-    Utility.ForEachItem(item =>
-    {
-      if (!string.IsNullOrEmpty(item?.QualifiedItemId))
+    // ForEachItemContext walks the whole world; filter it down to items the player actually
+    // owns, matching LookupAnything's owned-item rules.
+    Utility.ForEachItemContext(
+      (in ForEachItemContext context) =>
       {
-        ids.Add(item.QualifiedItemId);
+        Item item = context.Item;
+        try
+        {
+          // Skip forage/litter lying on the ground rather than forageables the player stored.
+          if (
+            item is Object obj
+            && (obj.IsSpawnedObject || obj.isForage() || obj.Category == Object.litterCategory)
+          )
+          {
+            return true;
+          }
+
+          // Skip machine output that isn't ready yet (e.g. a fermenting keg): not owned until
+          // collected. Casks can be emptied anytime, so their contents still count.
+          IList<object> path = context.GetPath();
+          if (
+            path.Count > 0
+            && path[^1] is Object { MinutesUntilReady: > 0 } machine
+            && machine is not Cask
+          )
+          {
+            return true;
+          }
+
+          if (!string.IsNullOrEmpty(item?.QualifiedItemId))
+          {
+            ids.Add(item.QualifiedItemId);
+          }
+        }
+        catch (Exception ex)
+        {
+          // A modded item overriding isForage/etc. could throw; skip just that item so the
+          // rest of the scan (including the player inventory, walked last) still completes.
+          ModEntry.MonitorObject.LogOnce(
+            $"ShowBirthdayIcon: skipped an item during owned scan, id={item?.QualifiedItemId}, {ex.Message}",
+            LogLevel.Trace
+          );
+        }
+
+        return true;
       }
+    );
 
-      return true;
-    });
-
+    // Inventory is always owned; add it directly so it's never lost if the world scan bails.
     foreach (Item? item in Game1.player.Items)
     {
       if (!string.IsNullOrEmpty(item?.QualifiedItemId))
       {
         invIds.Add(item.QualifiedItemId);
+        ids.Add(item.QualifiedItemId);
       }
     }
 
