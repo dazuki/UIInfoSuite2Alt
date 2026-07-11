@@ -18,7 +18,7 @@ internal class ShowGoldenWalnutCount : IDisposable
   private const float TextScale = 1f;
   private const float IconScale = 2f;
   private const float PanelScale = 2f;
-  private const int IconSize = 16; // walnut sprite is 16x16
+  private const int IconSize = 16;
   private const int TotalWalnuts = 130;
   private const int QiDoorThreshold = 100;
 
@@ -234,8 +234,8 @@ internal class ShowGoldenWalnutCount : IDisposable
       return;
     }
 
-    // Only show on Ginger Island unless "show anywhere" is enabled
-    if (!_showAnywhere && Game1.currentLocation?.GetLocationContextId() != "Island")
+    // Type check, not "Island" context: mods (SVE) reuse that context for non-island maps
+    if (!_showAnywhere && Game1.currentLocation is not IslandLocation)
     {
       return;
     }
@@ -372,11 +372,9 @@ internal class ShowGoldenWalnutCount : IDisposable
     float panelX = 8f;
     float panelY = GetTopLeftYOffset();
 
-    // Draw 9-slice background
     var dest = new Rectangle((int)panelX, (int)panelY, panelWidth, panelHeight);
     NineSlice.Draw(batch, dest, PanelScale, 0.89f, Color.White * 0.9f * alpha);
 
-    // Draw walnut icon (vertically centered in panel)
     float iconX = panelX + CornerScaled;
     float iconY = panelY + CornerScaled + (contentHeight - scaledIconSize) / 2f;
     batch.Draw(
@@ -391,7 +389,6 @@ internal class ShowGoldenWalnutCount : IDisposable
       0.9f
     );
 
-    // Draw text with smallFont (vertically centered + 3px down), with 1px shadow
     float textX = iconX + scaledIconSize + gap;
     float textY = panelY + CornerScaled + (contentHeight - textSize.Y) / 2f + 3f;
     DrawTextWithShadow(batch, text, new Vector2(textX, textY), Game1.textColor * alpha, 40);
@@ -471,7 +468,6 @@ internal class ShowGoldenWalnutCount : IDisposable
     float panelX = counterRect.X;
     float panelY = counterRect.Bottom + PanelGap;
 
-    // Draw 9-slice background
     var dest = new Rectangle((int)panelX, (int)panelY, panelWidth, panelHeight);
     NineSlice.Draw(batch, dest, PanelScale, 0.89f, Color.White * 0.9f);
 

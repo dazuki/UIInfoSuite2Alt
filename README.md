@@ -81,6 +81,8 @@
 
 > Most new features can be toggled on/off in the mod's in-game options menu.
 
+- **v2.8.35**
+  - Golden Walnut tracker no longer shows in non-island locations that reuse the "Island" context (e.g. SVE's Enchanted Grove)
 - **v2.8.34**
   - Added a chest fill-count tooltip (compatability with Chests Anywhere tooltip)
   - Added a `uiis` console command for debugging (displays JSON with additional debug comments):
