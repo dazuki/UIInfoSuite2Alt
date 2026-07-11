@@ -77,6 +77,8 @@
 - [Bahasa Indonesia](https://www.nexusmods.com/stardewvalley/mods/46341) - BabangUcok
 - [български](https://www.nexusmods.com/stardewvalley/mods/45619) - AcTePuKc
 
+<a id="patchnotes"></a>
+
 ![New features](.github/assets/patch-notes.png)
 
 > Most new features can be toggled on/off in the mod's in-game options menu.
