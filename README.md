@@ -75,7 +75,7 @@
 - [Polski](https://www.nexusmods.com/stardewvalley/mods/45467) - zieloneoczka
 - [Français](https://www.nexusmods.com/stardewvalley/mods/46333) - Furaxx31
 - [Bahasa Indonesia](https://www.nexusmods.com/stardewvalley/mods/46341) - BabangUcok
-- [български](https://www.nexusmods.com/stardewvalley/mods/45619) - AcTePuKc
+- [Български](https://www.nexusmods.com/stardewvalley/mods/45619) - AcTePuKc
 
 <a id="patchnotes"></a>
 
