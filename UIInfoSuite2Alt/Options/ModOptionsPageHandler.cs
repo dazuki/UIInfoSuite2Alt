@@ -142,6 +142,11 @@ internal class ModOptionsPageHandler : IDisposable
   private readonly PerScreen<ModOptionsPageState?> _savedPageState = new();
   private bool ShowPersonalConfigButton => ModEntry.ModConfig.ShowOptionsTabInMenu;
 
+  private static bool IsAndroid => Constants.TargetPlatform == GamePlatform.Android;
+
+  // Android draws the entry as an inventory-page button (next to organize) instead of a tab-bar tab.
+  private readonly PerScreen<Rectangle> _androidButtonBounds = new(() => Rectangle.Empty);
+
   private bool _addOurTabBeforeTick;
   private readonly PerScreen<bool> _switchToOurTabNextTick = new();
   private bool _windowResizing;
@@ -1341,6 +1346,12 @@ internal class ModOptionsPageHandler : IDisposable
       return;
     }
 
+    if (IsAndroid)
+    {
+      HandleAndroidButtonPressed(e);
+      return;
+    }
+
     if (Game1.activeClickableMenu is GameMenu gameMenu)
     {
       // Right trigger → our tab (left trigger is handled by the game)
@@ -1568,6 +1579,11 @@ internal class ModOptionsPageHandler : IDisposable
         _savedPageState.Value = null;
       }
 
+      if (IsAndroid)
+      {
+        return;
+      }
+
       // Find the exit tab dynamically (last tab in the list)
       ClickableComponent? exitTab = newGameMenu.tabs.Count > 0 ? newGameMenu.tabs[^1] : null;
 
@@ -1642,7 +1658,7 @@ internal class ModOptionsPageHandler : IDisposable
 
   private void OnRenderingMenu(object? sender, RenderingActiveMenuEventArgs e)
   {
-    if (!ShowPersonalConfigButton)
+    if (!ShowPersonalConfigButton || IsAndroid)
     {
       return;
     }
@@ -1670,6 +1686,12 @@ internal class ModOptionsPageHandler : IDisposable
   {
     if (!ShowPersonalConfigButton)
     {
+      return;
+    }
+
+    if (IsAndroid)
+    {
+      DrawAndroidButton();
       return;
     }
 
@@ -1772,7 +1794,10 @@ internal class ModOptionsPageHandler : IDisposable
 
     // populateClickableComponentList handles AddTabsToClickableComponents; we just add our tab for snap support
     gameMenu.GetCurrentPage().populateClickableComponentList();
-    AddOurTabToClickableComponents(gameMenu, _modOptionsTab.Value!);
+    if (_modOptionsTab.Value != null)
+    {
+      AddOurTabToClickableComponents(gameMenu, _modOptionsTab.Value);
+    }
 
     gameMenu.setTabNeighborsForCurrentPage();
     if (Game1.options.SnappyMenus)
@@ -1799,6 +1824,91 @@ internal class ModOptionsPageHandler : IDisposable
   private int GetButtonXPosition(GameMenu gameMenu)
   {
     return gameMenu.xPositionOnScreen + gameMenu.width - 165;
+  }
+
+  /// <summary>Android: draw the options entry as a slot button next to the inventory organize button.</summary>
+  private void DrawAndroidButton()
+  {
+    _androidButtonBounds.Value = Rectangle.Empty;
+
+    if (
+      Game1.activeClickableMenu is not GameMenu gameMenu
+      || gameMenu.currentTab != GameMenu.inventoryTab
+      || gameMenu.GetChildMenu() != null
+      || gameMenu.GetCurrentPage() is not InventoryPage invPage
+      || _modOptionsPageButton.Value == null
+    )
+    {
+      return;
+    }
+
+    // Anchor to the organize button, whose bounds already account for menu padding (xEdge).
+    // These live on InventoryMenu on Android (not on PC's type), so read them by reflection.
+    ClickableComponent? anchor =
+      invPage.inventory != null ? GetAndroidInventoryButton(invPage.inventory) : null;
+    if (anchor == null)
+    {
+      return;
+    }
+
+    const int size = 64;
+    const int gap = 8;
+    int pageRight = invPage.xPositionOnScreen + invPage.width;
+    int x = Math.Min(anchor.bounds.Right + gap, pageRight - 8 - size);
+    int y = anchor.bounds.Y;
+
+    _androidButtonBounds.Value = new Rectangle(x, y, size, size);
+    _modOptionsPageButton.Value.DrawInSlot(Game1.spriteBatch, x, y);
+
+    if (_androidButtonBounds.Value.Contains(Game1.getMouseX(), Game1.getMouseY()))
+    {
+      IClickableMenu.drawHoverText(Game1.spriteBatch, I18n.OptionsTabTooltip(), Game1.smallFont);
+    }
+  }
+
+  private static FieldInfo? _organizeButtonField;
+  private static FieldInfo? _trashCanField;
+  private static bool _inventoryButtonFieldsResolved;
+
+  /// <summary>Android: reads InventoryMenu.organizeButton (or trashCan) by reflection - absent on PC's type.</summary>
+  private static ClickableComponent? GetAndroidInventoryButton(InventoryMenu inventory)
+  {
+    if (!_inventoryButtonFieldsResolved)
+    {
+      const BindingFlags flags =
+        BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+      _organizeButtonField = typeof(InventoryMenu).GetField("organizeButton", flags);
+      _trashCanField = typeof(InventoryMenu).GetField("trashCan", flags);
+      _inventoryButtonFieldsResolved = true;
+    }
+
+    return _organizeButtonField?.GetValue(inventory) as ClickableComponent
+      ?? _trashCanField?.GetValue(inventory) as ClickableComponent;
+  }
+
+  private void HandleAndroidButtonPressed(ButtonPressedEventArgs e)
+  {
+    if (e.Button is not (SButton.MouseLeft or SButton.ControllerA) || e.IsSuppressed())
+    {
+      return;
+    }
+
+    if (
+      Game1.activeClickableMenu is not GameMenu gameMenu
+      || gameMenu.currentTab == _modOptionsTabPageNumber.Value
+      || !gameMenu.readyToClose()
+    )
+    {
+      return;
+    }
+
+    int mouseX = (int)Utility.ModifyCoordinateForUIScale(Game1.getMouseX());
+    int mouseY = (int)Utility.ModifyCoordinateForUIScale(Game1.getMouseY());
+    if (_androidButtonBounds.Value.Contains(mouseX, mouseY))
+    {
+      ChangeToOurTab(gameMenu);
+      _helper.Input.Suppress(e.Button);
+    }
   }
 
   private void DrawButton(GameMenu gameMenu)
