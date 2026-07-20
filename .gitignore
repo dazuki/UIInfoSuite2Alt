@@ -299,3 +299,6 @@ __pycache__/
 # Target files
 *.targets
 smapi-raw-log-parser
+
+# CSharpier ignore
+.csharpierignore

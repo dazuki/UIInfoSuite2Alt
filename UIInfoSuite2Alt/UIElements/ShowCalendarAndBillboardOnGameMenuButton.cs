@@ -208,7 +208,19 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
     if (_hasCpCatValley)
       offset -= 8;
 
-    int baseX = menu.xPositionOnScreen + menu.width - S(120);
+    int menuRight = menu.xPositionOnScreen + menu.width;
+
+    // Android "Menu padding" (Game1.xEdge) insets the InventoryPage but not the GameMenu; anchor
+    // to the page's right edge to track it. xEdge defaults to 0, so no-op until the player raises it.
+    if (
+      Constants.TargetPlatform == GamePlatform.Android
+      && GameMenuHelper.GetCurrentPage(menu) is InventoryPage invPage
+    )
+    {
+      menuRight = invPage.xPositionOnScreen + invPage.width;
+    }
+
+    int baseX = menuRight - S(120);
     int baseY = menu.yPositionOnScreen + menu.height - S(offset);
 
     if (TryGetAndroidDividerY(menu, out int dividerY))
