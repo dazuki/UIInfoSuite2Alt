@@ -9,7 +9,10 @@ using UIInfoSuite2Alt.UIElements;
 
 namespace UIInfoSuite2Alt.Patches;
 
-/// <summary>Injects icon draws before the held-item/tooltip block in InventoryPage.draw so vanilla layering puts tooltips on top.</summary>
+/// <summary>
+/// Injects icon draws before the held-item/tooltip block in InventoryPage.draw so vanilla layering puts tooltips on top.
+/// Android has no such block - draw ends at inventory.draw(b) - so a postfix is used there instead.
+/// </summary>
 internal static class ShowCalendarAndBillboardOnInventoryPatch
 {
   public static void Initialize(Harmony harmony)
@@ -28,18 +31,37 @@ internal static class ShowCalendarAndBillboardOnInventoryPatch
       return;
     }
 
+    if (AccessTools.Method(typeof(InventoryPage), "checkHeldItem") != null)
+    {
+      harmony.Patch(
+        original: original,
+        transpiler: new HarmonyMethod(
+          typeof(ShowCalendarAndBillboardOnInventoryPatch),
+          nameof(Transpile)
+        )
+      );
+
+      ModEntry.MonitorObject.Log(
+        "ShowCalendarAndBillboardOnInventoryPatch: transpiler attached to InventoryPage.draw",
+        LogLevel.Trace
+      );
+      return;
+    }
+
     harmony.Patch(
       original: original,
-      transpiler: new HarmonyMethod(
-        typeof(ShowCalendarAndBillboardOnInventoryPatch),
-        nameof(Transpile)
-      )
+      postfix: new HarmonyMethod(typeof(ShowCalendarAndBillboardOnInventoryPatch), nameof(Postfix))
     );
 
     ModEntry.MonitorObject.Log(
-      "ShowCalendarAndBillboardOnInventoryPatch: transpiler attached to InventoryPage.draw",
+      "ShowCalendarAndBillboardOnInventoryPatch: InventoryPage.checkHeldItem not present, attached postfix to InventoryPage.draw instead",
       LogLevel.Trace
     );
+  }
+
+  private static void Postfix(SpriteBatch b)
+  {
+    ShowCalendarAndBillboardOnGameMenuButton.DrawIconsFromInventoryPagePatch(b);
   }
 
   private static IEnumerable<CodeInstruction> Transpile(IEnumerable<CodeInstruction> instructions)

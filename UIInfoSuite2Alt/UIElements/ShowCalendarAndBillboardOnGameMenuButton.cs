@@ -24,6 +24,10 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
   #region Properties
   private const int IconSpacing = 8;
   private const int DrawSize = 32;
+  private const int DesktopSlotSize = 64;
+
+  private static FieldInfo? _bottomBoxYField;
+  private static bool _bottomBoxYResolved;
 
   // Snap component IDs for gamepad navigation
   private const int CalendarSnapId = 77770;
@@ -186,6 +190,12 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
 
   private void ComputeBoundsAndDrawIcons(SpriteBatch b, IClickableMenu menu)
   {
+    float scale = GetMenuScale(menu);
+    int S(int value) => (int)(value * scale);
+
+    int drawSize = S(DrawSize);
+    int iconSpacing = S(IconSpacing);
+
     // Mod compatibility offsets
     int offset = 294;
 
@@ -198,27 +208,37 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
     if (_hasCpCatValley)
       offset -= 8;
 
-    int baseX = menu.xPositionOnScreen + menu.width - 120;
-    int baseY = menu.yPositionOnScreen + menu.height - offset;
+    int baseX = menu.xPositionOnScreen + menu.width - S(120);
+    int baseY = menu.yPositionOnScreen + menu.height - S(offset);
+
+    if (TryGetAndroidDividerY(menu, out int dividerY))
+    {
+      baseY = dividerY + S(28) + iconSpacing;
+    }
 
     ParsedItemData calendarData = ItemRegistry.GetDataOrErrorItem("(F)1402");
     Rectangle calendarSrc = calendarData.GetSourceRect();
-    Rectangle calendarDest = new(baseX, baseY - 28, calendarSrc.Width * 2, calendarSrc.Height * 2);
-    Rectangle questDest = new(baseX + DrawSize + IconSpacing, baseY - 6, DrawSize, DrawSize);
+    Rectangle calendarDest = new(
+      baseX,
+      baseY - S(28),
+      S(calendarSrc.Width * 2),
+      S(calendarSrc.Height * 2)
+    );
+    Rectangle questDest = new(baseX + drawSize + iconSpacing, baseY - S(6), drawSize, drawSize);
 
-    _calendarBounds.Value = new Rectangle(baseX, baseY - 6, DrawSize, DrawSize);
+    _calendarBounds.Value = new Rectangle(baseX, baseY - S(6), drawSize, drawSize);
     _questBounds.Value = questDest;
 
     bool soUnlocked = SpecialOrder.IsSpecialOrdersBoardUnlocked();
     Rectangle specialOrdersDest = Rectangle.Empty;
     if (soUnlocked)
     {
-      int soWidth = DrawSize * 17 / 13;
+      int soWidth = drawSize * 17 / 13;
       specialOrdersDest = new Rectangle(
-        questDest.X - 4,
-        questDest.Y + DrawSize + IconSpacing,
+        questDest.X - S(4),
+        questDest.Y + drawSize + iconSpacing,
         soWidth,
-        DrawSize
+        drawSize
       );
     }
     _specialOrdersBounds.Value = specialOrdersDest;
@@ -227,17 +247,17 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
     Rectangle qiOrdersDest = Rectangle.Empty;
     if (qiUnlocked)
     {
-      int qiWidth = 15 * 2;
-      int qiHeight = 14 * 2;
+      int qiWidth = S(15 * 2);
+      int qiHeight = S(14 * 2);
       qiOrdersDest = new Rectangle(
         specialOrdersDest != Rectangle.Empty
-          ? specialOrdersDest.X - qiWidth - IconSpacing + 4
-          : questDest.X - 4,
+          ? specialOrdersDest.X - qiWidth - iconSpacing + S(4)
+          : questDest.X - S(4),
         (
           specialOrdersDest != Rectangle.Empty
             ? specialOrdersDest.Y
-            : questDest.Y + DrawSize + IconSpacing
-        ) + 2,
+            : questDest.Y + drawSize + iconSpacing
+        ) + S(2),
         qiWidth,
         qiHeight
       );
@@ -257,9 +277,60 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
     );
   }
 
+  /// <summary>
+  /// Android sizes inventory slots to the viewport rather than the fixed 64 desktop uses, so desktop-tuned
+  /// pixel sizes come out small next to them. Mirrors the game's own InventoryMenu.scaleFactor. Always 1 on desktop.
+  /// </summary>
+  private static float GetMenuScale(IClickableMenu menu)
+  {
+    if (Constants.TargetPlatform != GamePlatform.Android)
+    {
+      return 1f;
+    }
+
+    if (
+      GameMenuHelper.GetCurrentPage(menu) is not InventoryPage page
+      || page.inventory?.inventory is not { Count: > 0 } slots
+    )
+    {
+      return 1f;
+    }
+
+    int slotSize = slots[0].bounds.Width;
+    return slotSize > 0 ? (float)slotSize / DesktopSlotSize : 1f;
+  }
+
+  private static bool TryGetAndroidDividerY(IClickableMenu menu, out int dividerY)
+  {
+    dividerY = 0;
+    if (
+      Constants.TargetPlatform != GamePlatform.Android
+      || GameMenuHelper.GetCurrentPage(menu) is not InventoryPage page
+    )
+    {
+      return false;
+    }
+
+    if (!_bottomBoxYResolved)
+    {
+      _bottomBoxYField = page.GetType()
+        .GetField("bottomBoxY", BindingFlags.NonPublic | BindingFlags.Instance);
+      _bottomBoxYResolved = true;
+    }
+
+    if (_bottomBoxYField?.GetValue(page) is int value && value > 0)
+    {
+      dividerY = value;
+      return true;
+    }
+
+    dividerY = page.yPositionOnScreen + page.height / 2;
+    return dividerY > 0;
+  }
+
   private void DrawBillboard()
   {
-    // Icon sprites are drawn earlier via the InventoryPage transpiler; this pass only does hover text + gamepad snap.
+    // Icon sprites are drawn earlier via the InventoryPage patch; this pass only does hover text + gamepad snap.
     IClickableMenu? menu = Game1.activeClickableMenu;
     if (menu == null)
     {
