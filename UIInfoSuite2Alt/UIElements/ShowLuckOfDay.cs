@@ -280,7 +280,7 @@ internal class ShowLuckOfDay : IDisposable
         _diceColor.Value = Luck2Color;
         _tvFrame.Value = 4;
       }
-      else if (sharedLuck >= 0.12)
+      else if (sharedLuck >= 0.09)
       {
         // Shrine extreme good
         _hoverText.Value = I18n.LuckStatus1();
