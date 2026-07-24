@@ -33,6 +33,7 @@ public static class ModCompat
   public const string BetterJunimos = "hawkfalcon.BetterJunimos";
   public const string WalkOfLife = "DaLion.Professions";
   public const string ExtraMachineConfig = "selph.ExtraMachineConfig";
+  public const string CarpentersApprentice = "Juanpa98ar.Code.CarpentersApprentice";
   public const string AnimalHusbandry = "DIGUS.ANIMALHUSBANDRYMOD";
   public const string BiggerBackpack = "spacechase0.BiggerBackpack";
   public const string FullInventoryView = "CpdnCristiano.FullInventoryView";

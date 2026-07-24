@@ -83,6 +83,8 @@
 
 > Most new features can be toggled on/off in the mod's in-game options menu.
 
+- **v2.8.36**
+  - Robin building-status icon now also shows [Carpenter's Apprentice](https://www.nexusmods.com/stardewvalley/mods/43035) builders, each with their own headshot and days-remaining tooltip
 - **v2.8.35**
   - Added a "Show unmet villagers" birthday option for icons (Default: On)
     - When Off, birthday icons only show for villagers you've met (the icon will appear the moment you talk to them for the first time on their birthday)
