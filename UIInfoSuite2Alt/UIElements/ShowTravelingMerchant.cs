@@ -32,6 +32,10 @@ public class ShowTravelingMerchant : IDisposable
   private int _bundlePulseTimer;
   private int _bundlePulseDelay;
 
+  // The stock check runs from DayStarted, where mods that rewrite bundle data (e.g.
+  // Challenging Community Center Bundles) may not have applied theirs yet. Defer it a tick.
+  private bool _merchantCheckPending;
+
   private bool _rsvIsLoaded;
   private bool _rsvMerchantIsHere;
   private bool _rsvMerchantIsVisited;
@@ -161,6 +165,12 @@ public class ShowTravelingMerchant : IDisposable
 
   private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
   {
+    if (_merchantCheckPending)
+    {
+      _merchantCheckPending = false;
+      CheckMerchantForBundleItems();
+    }
+
     if ((!_merchantHasBundleItems && !_merchantHasUbBundleItems) || !ShowBundleIcon)
     {
       return;
@@ -319,10 +329,7 @@ public class ShowTravelingMerchant : IDisposable
     _rsvMerchantIsHere = _rsvIsLoaded && Game1.dayOfMonth % 7 == 3;
     _rsvMerchantIsVisited = false;
 
-    if (_travelingMerchantIsHere || _rsvMerchantIsHere)
-    {
-      CheckMerchantForBundleItems();
-    }
+    _merchantCheckPending = _travelingMerchantIsHere || _rsvMerchantIsHere;
   }
 
   private void CheckMerchantForBundleItems()

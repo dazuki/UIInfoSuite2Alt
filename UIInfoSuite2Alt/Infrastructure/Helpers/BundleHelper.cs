@@ -30,6 +30,10 @@ internal static class BundleHelper
   private static readonly Dictionary<string, List<List<int>>> AllBundleIngredients = [];
   private static readonly Dictionary<int, int> BundleIdToAreaMap = [];
 
+  // NetWorldState allocates a new BundleData dictionary on every SetBundleData, so reference
+  // identity detects another mod swapping bundle definitions mid-day.
+  private static Dictionary<string, string>? _cachedBundleDataRef;
+
   /// <summary>When true, show bundle items for all CC areas regardless of room unlock state.</summary>
   public static bool ShowLockedBundles { get; set; }
 
@@ -38,6 +42,7 @@ internal static class BundleHelper
     BundleIdToBundleKeyDataMap.Clear();
     AllBundleIngredients.Clear();
     BundleIdToAreaMap.Clear();
+    _cachedBundleDataRef = null;
   }
 
   public static BundleKeyData? GetBundleKeyDataFromIndex(int bundleIdx, bool forceRefresh = false)
@@ -209,7 +214,13 @@ internal static class BundleHelper
   /// </summary>
   public static void PopulateBundleCaches(bool force = false)
   {
-    if (BundleIdToBundleKeyDataMap.Count != 0 && !force)
+    Dictionary<string, string> bundleData = Game1.netWorldState.Value.BundleData;
+
+    if (
+      BundleIdToBundleKeyDataMap.Count != 0
+      && !force
+      && ReferenceEquals(_cachedBundleDataRef, bundleData)
+    )
     {
       return;
     }
@@ -217,8 +228,7 @@ internal static class BundleHelper
     BundleIdToBundleKeyDataMap.Clear();
     AllBundleIngredients.Clear();
     BundleIdToAreaMap.Clear();
-
-    Dictionary<string, string> bundleData = Game1.netWorldState.Value.BundleData;
+    _cachedBundleDataRef = bundleData;
     Dictionary<int, bool[]> donationStatus = Game1.netWorldState.Value.Bundles.Pairs.ToDictionary(
       kvp => kvp.Key,
       kvp => kvp.Value.ToArray()
