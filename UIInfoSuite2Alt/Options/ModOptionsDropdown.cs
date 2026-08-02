@@ -43,6 +43,9 @@ internal class ModOptionsDropdown : ModOptionsElement
 
   private bool _canClick => IsEffectivelyEnabled();
 
+  /// <summary>The expanded list covers other rows, so it claims the next tap.</summary>
+  public override bool IsCapturingInput => IsAndroid && _clicked;
+
   private void RecalculateBounds()
   {
     int maxTextWidth = 0;
@@ -68,6 +71,12 @@ internal class ModOptionsDropdown : ModOptionsElement
     if (!_canClick)
       return;
 
+    if (IsAndroid)
+    {
+      AndroidReceiveLeftClick(x, y);
+      return;
+    }
+
     _startingSelected = _selectedOption;
     _dropDownBounds.Y = Bounds.Y;
     if (!_clicked)
@@ -78,15 +87,56 @@ internal class ModOptionsDropdown : ModOptionsElement
     LeftClickHeld(x, y);
   }
 
-  public override void LeftClickHeld(int x, int y)
+  /// <summary>
+  ///   Android: first tap opens the list, second tap picks a row. Touch has no hover between press
+  ///   and release, so the desktop drag-to-pick model commits a row the moment the list opens.
+  /// </summary>
+  private void AndroidReceiveLeftClick(int x, int y)
   {
-    if (!_canClick || !_clicked)
+    if (!_clicked)
+    {
+      _startingSelected = _selectedOption;
+      _dropDownBounds.Y = Bounds.Y;
+      ClampDropDownToViewport();
+      Game1.playSound("shwip");
+      _clicked = true;
       return;
+    }
 
+    _clicked = false;
+
+    if (_displayOptions.Count > 0 && _dropDownBounds.Contains(x, y))
+    {
+      _selectedOption = Math.Clamp(
+        (y - _dropDownBounds.Y) / ItemHeight,
+        0,
+        _displayOptions.Count - 1
+      );
+      Game1.playSound("drumkit6");
+      _setOption(_selectedOption);
+    }
+    else
+    {
+      _selectedOption = _startingSelected;
+    }
+  }
+
+  /// <summary>Shifts the list up if it would run past the bottom of the screen.</summary>
+  private void ClampDropDownToViewport()
+  {
     _dropDownBounds.Y = Math.Min(
       _dropDownBounds.Y,
       Game1.uiViewport.Height - _dropDownBounds.Height - _recentSlotY
     );
+  }
+
+  public override void LeftClickHeld(int x, int y)
+  {
+    // Android selects from discrete taps instead
+    if (!_canClick || !_clicked || IsAndroid)
+      return;
+
+    ClampDropDownToViewport();
 
     // Skip mouse-position tracking with gamepad; selection is changed via ReceiveKeyPress
     if (!Game1.options.SnappyMenus)
@@ -101,7 +151,8 @@ internal class ModOptionsDropdown : ModOptionsElement
 
   public override void LeftClickReleased(int x, int y)
   {
-    if (!_canClick || !_clicked)
+    // Android keeps the list open; the next tap commits
+    if (!_canClick || !_clicked || IsAndroid)
       return;
 
     _clicked = false;

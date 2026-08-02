@@ -708,6 +708,11 @@ public class ModOptionsPage : IClickableMenu, IDisposable
   {
     if (!GameMenu.forcePreventClose)
     {
+      if (IsAndroid && TryRouteToCapturingOption(x, y))
+      {
+        return;
+      }
+
       if (IsAndroid)
       {
         AndroidReceiveLeftClick(x, y);
@@ -768,6 +773,23 @@ public class ModOptionsPage : IClickableMenu, IDisposable
         }
       }
     }
+  }
+
+  /// <summary>Android: hands the click to a mid-interaction option, which may draw outside its slot.</summary>
+  private bool TryRouteToCapturingOption(int x, int y)
+  {
+    for (int i = 0; i < _optionSlots.Count; i++)
+    {
+      int index = _currentItemIndex + i;
+      if (index < _options.Count && _options[index].IsCapturingInput)
+      {
+        _options[index]
+          .ReceiveLeftClick(x - _optionSlots[i].bounds.X, y - _optionSlots[i].bounds.Y);
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /// <summary>Android: grabs the scrollbar slider, or arms a panel drag over the options area.</summary>

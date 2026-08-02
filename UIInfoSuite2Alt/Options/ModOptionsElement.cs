@@ -69,6 +69,12 @@ public class ModOptionsElement
   protected static bool IsAndroid => Constants.TargetPlatform == GamePlatform.Android;
 
   /// <summary>
+  ///   Whether this element is mid-interaction and takes the next click wherever it lands, for
+  ///   controls that draw outside their own slot.
+  /// </summary>
+  public virtual bool IsCapturingInput => false;
+
+  /// <summary>
   ///   Whether a slot-relative point activates this element. Overridden where the clickable area
   ///   must be narrower than <see cref="Bounds" />, so a touch drag scrolls instead of activating.
   /// </summary>
