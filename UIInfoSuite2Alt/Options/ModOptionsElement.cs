@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
 
@@ -64,6 +65,17 @@ public class ModOptionsElement
   }
 
   public Rectangle Bounds { get; protected set; }
+
+  protected static bool IsAndroid => Constants.TargetPlatform == GamePlatform.Android;
+
+  /// <summary>
+  ///   Whether a slot-relative point activates this element. Overridden where the clickable area
+  ///   must be narrower than <see cref="Bounds" />, so a touch drag scrolls instead of activating.
+  /// </summary>
+  public virtual bool ContainsClickPoint(int x, int y)
+  {
+    return Bounds.Contains(x, y);
+  }
 
   public virtual int Height
   {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Menus;
@@ -17,9 +18,21 @@ public class ModOptionsPage : IClickableMenu, IDisposable
   private readonly List<ModOptionsElement> _options;
   private readonly ClickableTextureComponent _scrollBar;
   private readonly ClickableTextureComponent _upArrow;
+  private readonly TouchScrollbox _touchScroll = new();
   private int _currentItemIndex;
+
+  /// <summary>Scroll distance from the top in pixels. Source of truth for the scroll position.</summary>
+  private int _scrollPixels;
+
+  /// <summary>How far the top visible option sits above the view top (zero or negative).</summary>
+  private int _topOptionOffset;
   private string _hoverText = "";
   private bool _isScrolling;
+
+  private static bool IsAndroid => Constants.TargetPlatform == GamePlatform.Android;
+
+  /// <summary>Extra hit-test width each side of the touch scrollbar.</summary>
+  private const int TouchScrollBarPadding = 16;
 
   /// <summary>Visible option slots. Public so populateClickableComponentList can find it.</summary>
   public List<ClickableComponent> _optionSlots = new();
@@ -45,39 +58,77 @@ public class ModOptionsPage : IClickableMenu, IDisposable
     _options = options;
     _events = events;
     _upArrow = new ClickableTextureComponent(
-      new Rectangle(
-        xPositionOnScreen + width + Game1.tileSize / 4,
-        yPositionOnScreen + Game1.tileSize,
-        11 * Game1.pixelZoom,
-        12 * Game1.pixelZoom
-      ),
+      Rectangle.Empty,
       Game1.mouseCursors,
       new Rectangle(421, 459, 11, 12),
       Game1.pixelZoom
     );
 
     _downArrow = new ClickableTextureComponent(
-      new Rectangle(
-        _upArrow.bounds.X,
-        yPositionOnScreen + height - Game1.tileSize,
-        _upArrow.bounds.Width,
-        _upArrow.bounds.Height
-      ),
+      Rectangle.Empty,
       Game1.mouseCursors,
       new Rectangle(421, 472, 11, 12),
       Game1.pixelZoom
     );
 
     _scrollBar = new ClickableTextureComponent(
-      new Rectangle(
-        _upArrow.bounds.X + Game1.pixelZoom * 3,
-        _upArrow.bounds.Y + _upArrow.bounds.Height + Game1.pixelZoom,
-        6 * Game1.pixelZoom,
-        10 * Game1.pixelZoom
-      ),
+      Rectangle.Empty,
       Game1.mouseCursors,
       new Rectangle(435, 463, 6, 10),
       Game1.pixelZoom
+    );
+
+    UpdateScrollComponentBounds();
+    LayoutSlots();
+
+    events.Display.MenuChanged += OnMenuChanged;
+  }
+
+  private int ViewTopY => yPositionOnScreen + Game1.tileSize * 5 / 4 + Game1.pixelZoom;
+
+  private int ViewBottomY => yPositionOnScreen + height - Game1.tileSize;
+
+  private int ViewHeight => ViewBottomY - ViewTopY;
+
+  /// <summary>
+  ///   Android places the bar inside the panel: the menu spans the full viewport there, so the
+  ///   desktop position outside the right edge would be off-screen. Arrows are dropped in favour
+  ///   of drag-scrolling, as in the mobile menus.
+  /// </summary>
+  private void UpdateScrollComponentBounds()
+  {
+    if (IsAndroid)
+    {
+      int barWidth = 6 * Game1.pixelZoom;
+      int barX = xPositionOnScreen + width - Game1.tileSize / 2 - barWidth;
+
+      _upArrow.bounds = Rectangle.Empty;
+      _downArrow.bounds = Rectangle.Empty;
+
+      _scrollBarRunner = new Rectangle(barX, ViewTopY, barWidth, ViewHeight);
+      _scrollBar.bounds = new Rectangle(barX, ViewTopY, barWidth, 10 * Game1.pixelZoom);
+      return;
+    }
+
+    _upArrow.bounds = new Rectangle(
+      xPositionOnScreen + width + Game1.tileSize / 4,
+      yPositionOnScreen + Game1.tileSize,
+      11 * Game1.pixelZoom,
+      12 * Game1.pixelZoom
+    );
+
+    _downArrow.bounds = new Rectangle(
+      _upArrow.bounds.X,
+      yPositionOnScreen + height - Game1.tileSize,
+      _upArrow.bounds.Width,
+      _upArrow.bounds.Height
+    );
+
+    _scrollBar.bounds = new Rectangle(
+      _upArrow.bounds.X + Game1.pixelZoom * 3,
+      _upArrow.bounds.Y + _upArrow.bounds.Height + Game1.pixelZoom,
+      6 * Game1.pixelZoom,
+      10 * Game1.pixelZoom
     );
 
     _scrollBarRunner = new Rectangle(
@@ -86,11 +137,88 @@ public class ModOptionsPage : IClickableMenu, IDisposable
       _scrollBar.bounds.Width,
       height - Game1.tileSize * 2 - _upArrow.bounds.Height - Game1.pixelZoom * 2
     );
+  }
+
+  /// <summary>
+  ///   Cached total option height. <see cref="ModOptionsElement.Height" /> re-wraps label text on
+  ///   each call, so summing the whole list every tick is too costly. Only menu size affects it.
+  /// </summary>
+  private int _contentHeightCache = -1;
+
+  private void InvalidateContentHeight()
+  {
+    _contentHeightCache = -1;
+  }
+
+  private int GetContentHeight()
+  {
+    if (_contentHeightCache < 0)
+    {
+      int total = 0;
+      foreach (ModOptionsElement option in _options)
+      {
+        total += option.Height;
+      }
+
+      _contentHeightCache = total;
+    }
+
+    return _contentHeightCache;
+  }
+
+  private int GetMaxScrollPixels()
+  {
+    return Math.Max(0, GetContentHeight() - ViewHeight);
+  }
+
+  private int GetOffsetOfIndex(int index)
+  {
+    int offset = 0;
+    for (int i = 0; i < index && i < _options.Count; i++)
+    {
+      offset += _options[i].Height;
+    }
+
+    return offset;
+  }
+
+  /// <summary>Android only: sets the scroll position in pixels and derives the top visible option.</summary>
+  private void SetScrollPixels(int pixels)
+  {
+    _scrollPixels = Math.Max(0, Math.Min(GetMaxScrollPixels(), pixels));
+
+    int consumed = 0;
+    int index = 0;
+    while (index < _options.Count - 1 && consumed + _options[index].Height <= _scrollPixels)
+    {
+      consumed += _options[index].Height;
+      index++;
+    }
+
+    _currentItemIndex = index;
+    _topOptionOffset = consumed - _scrollPixels;
+    _touchScroll.SetYOffsetForScroll(-_scrollPixels);
+  }
+
+  /// <summary>Scrolls so the given option sits at the top of the view, then relays out the slots.</summary>
+  private void ScrollToIndex(int index)
+  {
+    if (IsAndroid)
+    {
+      SetScrollPixels(GetOffsetOfIndex(Math.Max(0, Math.Min(_options.Count - 1, index))));
+    }
+    else
+    {
+      _currentItemIndex = Math.Max(0, Math.Min(GetMaxScrollIndex(), index));
+    }
 
     LayoutSlots();
-
-    events.Display.MenuChanged += OnMenuChanged;
   }
+
+  private bool CanScrollDown =>
+    IsAndroid ? _scrollPixels < GetMaxScrollPixels() : _currentItemIndex < GetMaxScrollIndex();
+
+  private bool CanScrollUp => IsAndroid ? _scrollPixels > 0 : _currentItemIndex > 0;
 
   /// <summary>Raised after a game menu is opened, closed, or replaced.</summary>
   /// <param name="sender">The event sender.</param>
@@ -103,25 +231,15 @@ public class ModOptionsPage : IClickableMenu, IDisposable
       yPositionOnScreen = e.NewMenu.yPositionOnScreen + 10;
       height = e.NewMenu.height;
 
-      _upArrow.bounds.X = xPositionOnScreen + width + Game1.tileSize / 4;
-      _upArrow.bounds.Y = yPositionOnScreen + Game1.tileSize;
-      _upArrow.bounds.Width = 11 * Game1.pixelZoom;
-      _upArrow.bounds.Height = 12 * Game1.pixelZoom;
+      UpdateScrollComponentBounds();
 
-      _downArrow.bounds.X = _upArrow.bounds.X;
-      _downArrow.bounds.Y = yPositionOnScreen + height - Game1.tileSize;
-      _downArrow.bounds.Width = _upArrow.bounds.Width;
-      _downArrow.bounds.Height = _upArrow.bounds.Height;
-
-      _scrollBar.bounds.X = _upArrow.bounds.X + Game1.pixelZoom * 3;
-      _scrollBar.bounds.Y = _upArrow.bounds.Y + _upArrow.bounds.Height + Game1.pixelZoom;
-      _scrollBar.bounds.Width = 6 * Game1.pixelZoom;
-      _scrollBar.bounds.Height = 10 * Game1.pixelZoom;
-
-      _scrollBarRunner.X = _scrollBar.bounds.X;
-      _scrollBarRunner.Y = _scrollBar.bounds.Y;
-      _scrollBarRunner.Height =
-        height - Game1.tileSize * 2 - _upArrow.bounds.Height - Game1.pixelZoom * 2;
+      if (IsAndroid)
+      {
+        // Resized: option heights and the max scroll offset both changed
+        InvalidateContentHeight();
+        SetScrollPixels(_scrollPixels);
+        SetScrollBarToCurrentItem();
+      }
 
       LayoutSlots();
     }
@@ -159,7 +277,7 @@ public class ModOptionsPage : IClickableMenu, IDisposable
 
       if (oldID == lastInteractiveID)
       {
-        if (_currentItemIndex < GetMaxScrollIndex())
+        if (CanScrollDown)
         {
           int targetOptionIndex = _currentItemIndex + oldID + 1;
           while (targetOptionIndex < _options.Count && !_options[targetOptionIndex].IsInteractive)
@@ -175,23 +293,18 @@ public class ModOptionsPage : IClickableMenu, IDisposable
               int slotIndex = targetOptionIndex - _currentItemIndex;
               if (slotIndex >= 0 && slotIndex < _optionSlots.Count)
               {
-                if (
-                  _optionSlots[slotIndex].bounds.Bottom > bottomY
-                  && _currentItemIndex < GetMaxScrollIndex()
-                )
+                if (_optionSlots[slotIndex].bounds.Bottom > bottomY && CanScrollDown)
                 {
-                  _currentItemIndex++;
-                  LayoutSlots();
+                  ScrollToIndex(_currentItemIndex + 1);
                 }
                 else
                 {
                   break;
                 }
               }
-              else if (slotIndex >= _optionSlots.Count && _currentItemIndex < GetMaxScrollIndex())
+              else if (slotIndex >= _optionSlots.Count && CanScrollDown)
               {
-                _currentItemIndex++;
-                LayoutSlots();
+                ScrollToIndex(_currentItemIndex + 1);
               }
               else
               {
@@ -225,7 +338,7 @@ public class ModOptionsPage : IClickableMenu, IDisposable
 
       if (oldID == firstInteractiveID)
       {
-        if (_currentItemIndex > 0)
+        if (CanScrollUp)
         {
           int targetOptionIndex = _currentItemIndex + oldID - 1;
           while (targetOptionIndex >= 0 && !_options[targetOptionIndex].IsInteractive)
@@ -241,20 +354,18 @@ public class ModOptionsPage : IClickableMenu, IDisposable
               int slotIndex = targetOptionIndex - _currentItemIndex;
               if (slotIndex >= 0 && slotIndex < _optionSlots.Count)
               {
-                if (_optionSlots[slotIndex].bounds.Top < topY && _currentItemIndex > 0)
+                if (_optionSlots[slotIndex].bounds.Top < topY && CanScrollUp)
                 {
-                  _currentItemIndex--;
-                  LayoutSlots();
+                  ScrollToIndex(_currentItemIndex - 1);
                 }
                 else
                 {
                   break;
                 }
               }
-              else if (slotIndex < 0 && _currentItemIndex > 0)
+              else if (slotIndex < 0 && CanScrollUp)
               {
-                _currentItemIndex--;
-                LayoutSlots();
+                ScrollToIndex(_currentItemIndex - 1);
               }
               else
               {
@@ -303,16 +414,14 @@ public class ModOptionsPage : IClickableMenu, IDisposable
         if (slotIndex >= 0 && slotIndex < _optionSlots.Count)
         {
           ClickableComponent slot = _optionSlots[slotIndex];
-          if (slot.bounds.Bottom > bottomY && _currentItemIndex < GetMaxScrollIndex())
+          if (slot.bounds.Bottom > bottomY && CanScrollDown)
           {
-            _currentItemIndex++;
-            LayoutSlots();
+            ScrollToIndex(_currentItemIndex + 1);
             scrolled = true;
           }
-          else if (slot.bounds.Top < topY && _currentItemIndex > 0)
+          else if (slot.bounds.Top < topY && CanScrollUp)
           {
-            _currentItemIndex--;
-            LayoutSlots();
+            ScrollToIndex(_currentItemIndex - 1);
             scrolled = true;
           }
           else
@@ -363,6 +472,17 @@ public class ModOptionsPage : IClickableMenu, IDisposable
 
   private void SetScrollBarToCurrentItem()
   {
+    if (IsAndroid)
+    {
+      int travel = _scrollBarRunner.Height - _scrollBar.bounds.Height;
+      int maxScroll = GetMaxScrollPixels();
+      _scrollBar.bounds.Y =
+        travel <= 0 || maxScroll <= 0
+          ? _scrollBarRunner.Y
+          : _scrollBarRunner.Y + (int)(travel * (_scrollPixels / (float)maxScroll));
+      return;
+    }
+
     if (_options.Count > 0)
     {
       int maxScroll = GetMaxScrollIndex();
@@ -378,11 +498,34 @@ public class ModOptionsPage : IClickableMenu, IDisposable
     }
   }
 
+  /// <summary>Android: scrolls to the fraction of the runner that the given y lands on.</summary>
+  private void ScrollToScrollBarPosition(int y)
+  {
+    int travel = _scrollBarRunner.Height - _scrollBar.bounds.Height;
+    if (travel <= 0)
+    {
+      return;
+    }
+
+    float percentage = (y - _scrollBarRunner.Y - _scrollBar.bounds.Height / 2f) / travel;
+    percentage = Math.Max(0f, Math.Min(1f, percentage));
+
+    SetScrollPixels((int)(percentage * GetMaxScrollPixels()));
+    SetScrollBarToCurrentItem();
+    LayoutSlots();
+  }
+
   public override void leftClickHeld(int x, int y)
   {
     if (!GameMenu.forcePreventClose)
     {
       base.leftClickHeld(x, y);
+
+      if (IsAndroid)
+      {
+        AndroidLeftClickHeld(x, y);
+        return;
+      }
 
       if (_isScrolling)
       {
@@ -424,6 +567,37 @@ public class ModOptionsPage : IClickableMenu, IDisposable
     }
   }
 
+  /// <summary>Android: drags the scrollbar slider, or the panel itself.</summary>
+  private void AndroidLeftClickHeld(int x, int y)
+  {
+    if (_isScrolling)
+    {
+      ScrollToScrollBarPosition(y);
+      return;
+    }
+
+    if (_touchScroll.LeftClickHeld(x, y))
+    {
+      SetScrollPixels(-_touchScroll.YOffsetForScroll);
+      SetScrollBarToCurrentItem();
+      LayoutSlots();
+    }
+
+    // Once the press becomes a drag it belongs to the scroll, not the option under it
+    if (
+      !_touchScroll.HavePanelScrolled
+      && _optionsSlotHeld > -1
+      && _optionsSlotHeld + _currentItemIndex < _options.Count
+    )
+    {
+      _options[_currentItemIndex + _optionsSlotHeld]
+        .LeftClickHeld(
+          x - _optionSlots[_optionsSlotHeld].bounds.X,
+          y - _optionSlots[_optionsSlotHeld].bounds.Y
+        );
+    }
+  }
+
   public override void receiveKeyPress(Keys key)
   {
     if (_optionsSlotHeld > -1 && _optionsSlotHeld + _currentItemIndex < _options.Count)
@@ -461,12 +635,12 @@ public class ModOptionsPage : IClickableMenu, IDisposable
     {
       base.receiveScrollWheelAction(direction);
 
-      if (direction > 0 && _currentItemIndex > 0)
+      if (direction > 0 && CanScrollUp)
       {
         UpArrowPressed();
         Game1.playSound("shiny4");
       }
-      else if (direction < 0 && _currentItemIndex < GetMaxScrollIndex())
+      else if (direction < 0 && CanScrollDown)
       {
         DownArrowPressed();
         Game1.playSound("shiny4");
@@ -480,6 +654,11 @@ public class ModOptionsPage : IClickableMenu, IDisposable
     {
       base.releaseLeftClick(x, y);
 
+      if (IsAndroid)
+      {
+        _touchScroll.ReleaseLeftClick();
+      }
+
       if (_optionsSlotHeld > -1 && _optionsSlotHeld + _currentItemIndex < _options.Count)
       {
         ClickableComponent optionSlot = _optionSlots[_optionsSlotHeld];
@@ -492,32 +671,53 @@ public class ModOptionsPage : IClickableMenu, IDisposable
     }
   }
 
+  /// <summary>Android: advances fling momentum after the finger lifts.</summary>
+  public override void update(GameTime time)
+  {
+    base.update(time);
+
+    if (!IsAndroid || !_touchScroll.ScrollingWithMomentum)
+    {
+      return;
+    }
+
+    _touchScroll.SetMaxYOffset(GetMaxScrollPixels());
+    if (_touchScroll.Update())
+    {
+      SetScrollPixels(-_touchScroll.YOffsetForScroll);
+      SetScrollBarToCurrentItem();
+      LayoutSlots();
+    }
+  }
+
   private void DownArrowPressed()
   {
     _downArrow.scale = _downArrow.baseScale;
-    ++_currentItemIndex;
+    ScrollToIndex(_currentItemIndex + 1);
     SetScrollBarToCurrentItem();
-    LayoutSlots();
   }
 
   private void UpArrowPressed()
   {
     _upArrow.scale = _upArrow.baseScale;
-    --_currentItemIndex;
+    ScrollToIndex(_currentItemIndex - 1);
     SetScrollBarToCurrentItem();
-    LayoutSlots();
   }
 
   public override void receiveLeftClick(int x, int y, bool playSound = true)
   {
     if (!GameMenu.forcePreventClose)
     {
-      if (_downArrow.containsPoint(x, y) && _currentItemIndex < GetMaxScrollIndex())
+      if (IsAndroid)
+      {
+        AndroidReceiveLeftClick(x, y);
+      }
+      else if (_downArrow.containsPoint(x, y) && CanScrollDown)
       {
         DownArrowPressed();
         Game1.playSound("shwip");
       }
-      else if (_upArrow.containsPoint(x, y) && _currentItemIndex > 0)
+      else if (_upArrow.containsPoint(x, y) && CanScrollUp)
       {
         UpArrowPressed();
         Game1.playSound("shwip");
@@ -541,14 +741,24 @@ public class ModOptionsPage : IClickableMenu, IDisposable
         base.releaseLeftClick(x, y);
       }
 
-      _currentItemIndex = Math.Max(0, Math.Min(GetMaxScrollIndex(), _currentItemIndex));
+      if (!IsAndroid)
+      {
+        _currentItemIndex = Math.Max(0, Math.Min(GetMaxScrollIndex(), _currentItemIndex));
+      }
+
+      // Partially scrolled options extend past both edges; only the visible part is tappable
+      if (IsAndroid && (y < ViewTopY || y > ViewBottomY))
+      {
+        return;
+      }
+
       for (var i = 0; i < _optionSlots.Count; ++i)
       {
         if (
           _optionSlots[i].bounds.Contains(x, y)
           && _currentItemIndex + i < _options.Count
           && _options[_currentItemIndex + i]
-            .Bounds.Contains(x - _optionSlots[i].bounds.X, y - _optionSlots[i].bounds.Y)
+            .ContainsClickPoint(x - _optionSlots[i].bounds.X, y - _optionSlots[i].bounds.Y)
         )
         {
           _options[_currentItemIndex + i]
@@ -558,6 +768,32 @@ public class ModOptionsPage : IClickableMenu, IDisposable
         }
       }
     }
+  }
+
+  /// <summary>Android: grabs the scrollbar slider, or arms a panel drag over the options area.</summary>
+  private void AndroidReceiveLeftClick(int x, int y)
+  {
+    _touchScroll.StopMomentum();
+    _touchScroll.SetMaxYOffset(GetMaxScrollPixels());
+
+    if (TouchScrollBarContains(x, y))
+    {
+      _isScrolling = true;
+      ScrollToScrollBarPosition(y);
+      return;
+    }
+
+    _touchScroll.Bounds = new Rectangle(xPositionOnScreen, ViewTopY, width, ViewHeight);
+    _touchScroll.ReceiveLeftClick(x, y);
+  }
+
+  private bool TouchScrollBarContains(int x, int y)
+  {
+    return GetMaxScrollPixels() > 0
+      && x >= _scrollBarRunner.X - TouchScrollBarPadding
+      && x <= _scrollBarRunner.Right + TouchScrollBarPadding
+      && y >= _scrollBarRunner.Y
+      && y <= _scrollBarRunner.Bottom;
   }
 
   public override void receiveRightClick(int x, int y, bool playSound = true) { }
@@ -588,12 +824,17 @@ public class ModOptionsPage : IClickableMenu, IDisposable
     );
 
     Rectangle prevScissor = batch.GraphicsDevice.ScissorRectangle;
-    Rectangle newScissor = new Rectangle(
-      xPositionOnScreen,
-      yPositionOnScreen + Game1.tileSize,
-      width,
-      height - Game1.tileSize * 3 / 2 - 10
-    );
+
+    // Android clips to the exact slot area, since drag-scrolling leaves partial options at both
+    // edges. The desktop rect is looser, but every option is whole there so nothing bleeds out.
+    Rectangle newScissor = IsAndroid
+      ? new Rectangle(xPositionOnScreen, ViewTopY, width, ViewHeight)
+      : new Rectangle(
+        xPositionOnScreen,
+        yPositionOnScreen + Game1.tileSize,
+        width,
+        height - Game1.tileSize * 3 / 2 - 10
+      );
 
     // Ensure scissor rectangle stays within screen bounds to avoid MonoGame crashes
     if (newScissor.X < 0)
@@ -622,9 +863,13 @@ public class ModOptionsPage : IClickableMenu, IDisposable
     batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
     if (!GameMenu.forcePreventClose)
     {
-      _upArrow.draw(batch);
-      _downArrow.draw(batch);
-      if (_options.Count > 7)
+      if (!IsAndroid)
+      {
+        _upArrow.draw(batch);
+        _downArrow.draw(batch);
+      }
+
+      if (IsAndroid ? GetMaxScrollPixels() > 0 : _options.Count > 7)
       {
         drawTextureBox(
           batch,
@@ -648,8 +893,6 @@ public class ModOptionsPage : IClickableMenu, IDisposable
     }
   }
 
-  /// <summary>Returns the <see cref="ModOptionsElement" /> that corresponds to the component ID</summary>
-  /// <returns>the mod options element, or null if it is invalid</returns>
   private int GetMaxScrollIndex()
   {
     int topY = yPositionOnScreen + Game1.tileSize * 5 / 4 + Game1.pixelZoom;
@@ -686,11 +929,16 @@ public class ModOptionsPage : IClickableMenu, IDisposable
 
   private void LayoutSlots()
   {
-    int topY = yPositionOnScreen + Game1.tileSize * 5 / 4 + Game1.pixelZoom;
-    int bottomY = yPositionOnScreen + height - Game1.tileSize;
+    int topY = ViewTopY;
+    int bottomY = ViewBottomY;
     int currentY = topY;
 
-    if (_currentItemIndex >= GetMaxScrollIndex())
+    if (IsAndroid)
+    {
+      // Round to a multiple of 4 (pixel zoom) so sprites and text do not shimmer mid-drag
+      currentY = topY + _topOptionOffset / 4 * 4;
+    }
+    else if (_currentItemIndex >= GetMaxScrollIndex())
     {
       int totalHeight = 0;
       for (int i = _currentItemIndex; i < _options.Count; i++)
@@ -802,8 +1050,16 @@ public class ModOptionsPage : IClickableMenu, IDisposable
   /// <summary>Clamp scroll position after the options list has been modified externally.</summary>
   internal void ClampScrollPosition()
   {
-    _currentItemIndex = Math.Min(_currentItemIndex, GetMaxScrollIndex());
-    _currentItemIndex = Math.Max(0, _currentItemIndex);
+    if (IsAndroid)
+    {
+      InvalidateContentHeight();
+      SetScrollPixels(_scrollPixels);
+    }
+    else
+    {
+      _currentItemIndex = Math.Min(_currentItemIndex, GetMaxScrollIndex());
+      _currentItemIndex = Math.Max(0, _currentItemIndex);
+    }
 
     SetScrollBarToCurrentItem();
     LayoutSlots();
@@ -813,7 +1069,14 @@ public class ModOptionsPage : IClickableMenu, IDisposable
   {
     if (state.currentIndex is int index)
     {
-      _currentItemIndex = index;
+      if (IsAndroid)
+      {
+        SetScrollPixels(GetOffsetOfIndex(index));
+      }
+      else
+      {
+        _currentItemIndex = index;
+      }
     }
 
     if (state.currentComponent is int componentID)

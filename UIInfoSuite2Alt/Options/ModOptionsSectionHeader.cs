@@ -15,6 +15,9 @@ internal class ModOptionsSectionHeader : ModOptionsElement
   private readonly Action _onToggle;
   private bool _boundsInitialized;
 
+  /// <summary>Android: just the icon and label, so a drag elsewhere on the row scrolls the page.</summary>
+  private Rectangle _touchBounds;
+
   public bool IsExpanded { get; set; }
 
   public ModOptionsSectionHeader(string label, Action onToggle, bool isExpanded = false)
@@ -35,19 +38,34 @@ internal class ModOptionsSectionHeader : ModOptionsElement
 
     _boundsInitialized = true;
 
-    // Cover the full slot so clicking anywhere on the row toggles
+    // Desktop covers the full slot, so clicking anywhere on the row toggles
     int slotWidth = Game1.activeClickableMenu?.width ?? Game1.uiViewport.Width;
     int slotHeight =
       Game1.activeClickableMenu != null
         ? (Game1.activeClickableMenu.height - Game1.tileSize * 2) / 7 + Game1.pixelZoom
         : Bounds.Height;
     Bounds = new Rectangle(0, 0, slotWidth, slotHeight);
+
+    // Matches the icon and label placement in Draw
+    int iconX = DefaultX * Game1.pixelZoom;
+    int textOffset = ExpandIcon.Width * Game1.pixelZoom + Game1.pixelZoom * 2 + 8;
+    _touchBounds = new Rectangle(
+      iconX,
+      0,
+      textOffset + SpriteText.getWidthOfString(_label),
+      slotHeight
+    );
+  }
+
+  public override bool ContainsClickPoint(int x, int y)
+  {
+    EnsureBounds();
+    return IsAndroid ? _touchBounds.Contains(x, y) : Bounds.Contains(x, y);
   }
 
   public override void ReceiveLeftClick(int x, int y)
   {
-    EnsureBounds();
-    if (Bounds.Contains(x, y))
+    if (ContainsClickPoint(x, y))
     {
       Game1.playSound("drumkit6");
       _onToggle();

@@ -45,6 +45,19 @@ internal class ModOptionsImage : ModOptionsElement
     Bounds = new Rectangle(0, 0, slotWidth, slotHeight);
   }
 
+  public override bool ContainsClickPoint(int x, int y)
+  {
+    // Android: the banner spans the whole row, so leave it to drag-scrolling and toggle
+    // from the section header only
+    if (IsAndroid)
+    {
+      return false;
+    }
+
+    EnsureBounds();
+    return Bounds.Contains(x, y);
+  }
+
   public override void ReceiveLeftClick(int x, int y)
   {
     if (_onClick == null)
@@ -52,8 +65,7 @@ internal class ModOptionsImage : ModOptionsElement
       return;
     }
 
-    EnsureBounds();
-    if (Bounds.Contains(x, y))
+    if (ContainsClickPoint(x, y))
     {
       Game1.playSound("drumkit6");
       _onClick();

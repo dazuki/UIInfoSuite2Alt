@@ -1514,6 +1514,12 @@ internal class ModOptionsPageHandler : IDisposable
       gameMenu = Game1.activeClickableMenu as GameMenu;
     }
 
+    // Must run before anything using the tab index, so a rebuilt menu is repaired first
+    if (IsAndroid && gameMenu != null)
+    {
+      ReaddPageIfDropped(gameMenu);
+    }
+
     // Deferred tab switch from keybind open
     if (_switchToOurTabNextTick.Value)
     {
@@ -1529,6 +1535,39 @@ internal class ModOptionsPageHandler : IDisposable
       OnGameMenuTabChanged(gameMenu);
       _lastMenuTab.Value = gameMenu?.currentTab;
     }
+  }
+
+  /// <summary>
+  ///   Android's <c>GameMenu.releaseLeftClick</c> calls <c>setupMenus</c> when the Menu Padding
+  ///   option changes, which clears and rebuilds <c>pages</c> on the same menu instance. That drops
+  ///   the options page without replacing the menu, so MenuChanged never fires and the tab index is
+  ///   left past the end of the list, crashing the unguarded <c>pages[currentTab]</c> lookups.
+  /// </summary>
+  private void ReaddPageIfDropped(GameMenu gameMenu)
+  {
+    if (_modOptionsPage.Value != null && gameMenu.pages.Contains(_modOptionsPage.Value))
+    {
+      return;
+    }
+
+    if (_modOptionsPage.Value == null)
+    {
+      _modOptionsPage.Value = new ModOptionsPage(_optionsElements, _helper.Events);
+    }
+
+    if (ShowPersonalConfigButton && _modOptionsPageButton.Value == null)
+    {
+      _modOptionsPageButton.Value = new ModOptionsPageButton(_helper);
+      _modOptionsPageButton.Value.xPositionOnScreen = GetButtonXPosition(gameMenu);
+    }
+
+    _modOptionsTabPageNumber.Value = gameMenu.pages.Count;
+    gameMenu.pages.Add(_modOptionsPage.Value);
+
+    ModEntry.MonitorObject.Log(
+      $"ModOptionsPageHandler: re-added options page dropped by menu rebuild, tabIndex={_modOptionsTabPageNumber.Value}, currentTab={gameMenu.currentTab}",
+      LogLevel.Trace
+    );
   }
 
   // Called during UpdateTicked (earlier than Display.MenuChanged)
@@ -1785,7 +1824,20 @@ internal class ModOptionsPageHandler : IDisposable
   /// <summary>Based on <see cref="GameMenu.changeTab" /></summary>
   private void ChangeToOurTab(GameMenu gameMenu)
   {
-    var modOptionsTabIndex = (int)_modOptionsTabPageNumber.Value!;
+    // Reachable only if the menu dropped the page unnoticed; a dangling index would crash the
+    // game's unguarded pages[currentTab] lookups
+    if (
+      _modOptionsTabPageNumber.Value is not int modOptionsTabIndex
+      || modOptionsTabIndex >= gameMenu.pages.Count
+    )
+    {
+      ModEntry.MonitorObject.Log(
+        $"ModOptionsPageHandler: skipped tab change, tabIndex={_modOptionsTabPageNumber.Value?.ToString() ?? "null"}, pages={gameMenu.pages.Count}",
+        LogLevel.Warn
+      );
+      return;
+    }
+
     gameMenu.currentTab = modOptionsTabIndex;
     gameMenu.lastOpenedNonMapTab = modOptionsTabIndex;
     gameMenu.initializeUpperRightCloseButton();
