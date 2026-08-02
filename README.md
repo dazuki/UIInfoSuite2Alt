@@ -85,7 +85,13 @@
 
 - **v2.8.36**
   - Robin building-status icon now also shows [Carpenter's Apprentice](https://www.nexusmods.com/stardewvalley/mods/43035) builders, each with their own headshot and days-remaining tooltip
-  - Fix bundle item hints alternating between vanilla and modded bundles from one day to the next with mods that swap bundle data on day start
+  - Fixed bundle item hints alternating between vanilla and modded bundles from one day to the next with mods that swap bundle data on day start
+  - Fixed the luck icon's best and worst states only appearing after using the shrine, never on the luckiest and unluckiest days
+  - Android:
+    - Mod options are opened from a button on the inventory page instead of a tab
+    - Mod options can now be scrolled by dragging anywhere on the page or by dragging the scrollbar
+    - Fixed the menu closing itself when opening mod options after changing the Menu Padding option
+    - Fixed Calendar and billboard icon group not rendering in the players inventory
 - **v2.8.35**
   - Added a "Show unmet villagers" birthday option for icons (Default: On)
     - When Off, birthday icons only show for villagers you've met (the icon will appear the moment you talk to them for the first time on their birthday)

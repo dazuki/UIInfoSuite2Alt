@@ -229,24 +229,18 @@ internal class ShowLuckOfDay : IDisposable
       double luck = Game1.player.DailyLuck;
       double sharedLuck = Game1.player.team.sharedDailyLuck.Value;
 
-      // Shrine extremes use sharedDailyLuck (base value before Special Charm);
-      // all other tiers use DailyLuck (includes Special Charm) with the same
-      // thresholds the TV fortune teller uses: -0.07, -0.02, +0.02, +0.07
-      if (sharedLuck <= -0.12)
+      // Tiers use DailyLuck (includes Special Charm) with the thresholds the TV fortune teller
+      // uses: -0.07, -0.02, +0.02, +0.07. Within the outer tiers the end frames are picked from
+      // sharedDailyLuck (base value, before Special Charm), which reaches +-0.12 from the shrine
+      // and +-0.1 from the daily roll, so those frames cover both.
+      if (luck < -0.07)
       {
-        // Shrine extreme bad
+        // Very bad luck; end frame for the shrine and the unluckiest rolls
+        bool isExtreme = sharedLuck <= -0.09;
         _hoverText.Value = I18n.LuckStatus6();
-        _cloverFrame.Value = 0;
+        _cloverFrame.Value = isExtreme ? 0 : 1;
         _diceColor.Value = Luck6Color;
-        _tvFrame.Value = 0;
-      }
-      else if (luck < -0.07)
-      {
-        // Very bad luck
-        _hoverText.Value = I18n.LuckStatus6();
-        _cloverFrame.Value = 1;
-        _diceColor.Value = Luck6Color;
-        _tvFrame.Value = 1;
+        _tvFrame.Value = isExtreme ? 0 : 1;
       }
       else if (luck < -0.02)
       {
@@ -280,21 +274,14 @@ internal class ShowLuckOfDay : IDisposable
         _diceColor.Value = Luck2Color;
         _tvFrame.Value = 4;
       }
-      else if (sharedLuck >= 0.09)
-      {
-        // Shrine extreme good
-        _hoverText.Value = I18n.LuckStatus1();
-        _cloverFrame.Value = 7;
-        _diceColor.Value = Luck1Color;
-        _tvFrame.Value = 6;
-      }
       else
       {
-        // Very good luck
+        // Very good luck; end frame for the shrine and the luckiest rolls
+        bool isExtreme = sharedLuck >= 0.09;
         _hoverText.Value = I18n.LuckStatus1();
-        _cloverFrame.Value = 6;
+        _cloverFrame.Value = isExtreme ? 7 : 6;
         _diceColor.Value = Luck1Color;
-        _tvFrame.Value = 5;
+        _tvFrame.Value = isExtreme ? 6 : 5;
       }
 
       // Rewrite the text, but keep the frame/color
