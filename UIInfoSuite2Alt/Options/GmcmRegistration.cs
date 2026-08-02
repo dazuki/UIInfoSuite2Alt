@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Xna.Framework.Graphics;
+using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using UIInfoSuite2Alt.Compatibility;
 using UIInfoSuite2Alt.Compatibility.Helpers;
@@ -428,11 +429,14 @@ public partial class ModEntry
       () => ModConfig.ShowBuffTimers,
       v => ModConfig.ShowBuffTimers = v
     );
-    AddSubBool(
-      nameof(ModConfig.PlayBuffExpireSound),
-      () => ModConfig.PlayBuffExpireSound,
-      v => ModConfig.PlayBuffExpireSound = v
-    );
+    if (Constants.TargetPlatform != GamePlatform.Android)
+    {
+      AddSubBool(
+        nameof(ModConfig.PlayBuffExpireSound),
+        () => ModConfig.PlayBuffExpireSound,
+        v => ModConfig.PlayBuffExpireSound = v
+      );
+    }
     Spacer();
     AddBool(
       nameof(ModConfig.ShowCustomIcons),

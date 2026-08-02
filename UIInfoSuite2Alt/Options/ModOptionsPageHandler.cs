@@ -666,16 +666,20 @@ internal class ModOptionsPageHandler : IDisposable
       Set(v => config.ShowBuffTimers = v)
     );
     _currentTarget.Add(buffTimersCheckbox);
-    _currentTarget.Add(
-      new ModOptionsCheckbox(
-        _helper.SafeGetString(nameof(config.PlayBuffExpireSound)),
-        whichOption++,
-        showBuffTimers.ToggleExpireSound,
-        () => config.PlayBuffExpireSound,
-        Set(v => config.PlayBuffExpireSound = v),
-        buffTimersCheckbox
-      )
-    );
+
+    if (!IsAndroid)
+    {
+      _currentTarget.Add(
+        new ModOptionsCheckbox(
+          _helper.SafeGetString(nameof(config.PlayBuffExpireSound)),
+          whichOption++,
+          showBuffTimers.ToggleExpireSound,
+          () => config.PlayBuffExpireSound,
+          Set(v => config.PlayBuffExpireSound = v),
+          buffTimersCheckbox
+        )
+      );
+    }
 
     _currentTarget.Add(
       new ModOptionsCheckbox(

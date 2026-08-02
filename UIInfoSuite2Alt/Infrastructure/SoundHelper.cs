@@ -34,8 +34,11 @@ public class SoundHelper
 
     _modId = helper.ModContent.ModID;
 
-    RegisterSound(helper, Sounds.LevelUp, "level_up.ogg");
-    RegisterSound(helper, Sounds.BuffExpired, "buff_expire.ogg");
+    if (Constants.TargetPlatform != GamePlatform.Android)
+    {
+      RegisterSound(helper, Sounds.LevelUp, "level_up.ogg");
+      RegisterSound(helper, Sounds.BuffExpired, "buff_expire.ogg");
+    }
 
     _initialized = true;
   }
