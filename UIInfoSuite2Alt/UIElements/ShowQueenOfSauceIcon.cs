@@ -213,7 +213,7 @@ internal class ShowQueenOfSauceIcon : IDisposable
       {
         if (
           !Game1.IsFakedBlackScreen()
-          && (iconComponent.Value?.containsPoint(Game1.getMouseX(), Game1.getMouseY()) ?? false)
+          && (iconComponent.Value?.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY) ?? false)
         )
         {
           IClickableMenu.drawHoverText(batch, hoverText, Game1.smallFont);

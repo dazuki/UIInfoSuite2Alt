@@ -115,6 +115,9 @@ internal class ShowBuffTimers : IDisposable
     // In Smaller mode the icons are half size, so a full "M:SS" overflows; use a compact form.
     bool compact = BuffIconSizePatch.Mode == BuffIconSizePatch.ModeSmaller;
 
+    // Android buff icon bounds are in the date box's scaled space
+    bool scaled = AndroidHud.Begin(b);
+
     foreach (KeyValuePair<ClickableTextureComponent, Buff> pair in buffs)
     {
       Buff buff = pair.Value;
@@ -144,6 +147,11 @@ internal class ShowBuffTimers : IDisposable
       bool isFading = buff.displayAlphaTimer > 0f;
 
       DrawTimer(b, minutes, seconds, new Vector2(x, y), alpha, isFading, compact);
+    }
+
+    if (scaled)
+    {
+      AndroidHud.End(b);
     }
   }
 

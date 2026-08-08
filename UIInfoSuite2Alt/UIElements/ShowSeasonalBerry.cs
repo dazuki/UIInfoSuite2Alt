@@ -130,7 +130,7 @@ internal class ShowSeasonalBerry : IDisposable
       },
       batch =>
       {
-        if (currentIcon != null && currentIcon.containsPoint(Game1.getMouseX(), Game1.getMouseY()))
+        if (currentIcon != null && currentIcon.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY))
         {
           IClickableMenu.drawHoverText(batch, hoverText, Game1.smallFont);
         }

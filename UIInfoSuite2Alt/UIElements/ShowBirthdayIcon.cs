@@ -552,7 +552,7 @@ internal class ShowBirthdayIcon : IDisposable
         },
         batch =>
         {
-          if (icons[capturedI].containsPoint(Game1.getMouseX(), Game1.getMouseY()))
+          if (icons[capturedI].containsPoint(AndroidHud.MouseX, AndroidHud.MouseY))
           {
             DrawIndividualTooltip(batch, npcs[capturedI]);
           }
@@ -606,7 +606,7 @@ internal class ShowBirthdayIcon : IDisposable
       },
       batch =>
       {
-        if (icons[0].containsPoint(Game1.getMouseX(), Game1.getMouseY()))
+        if (icons[0].containsPoint(AndroidHud.MouseX, AndroidHud.MouseY))
         {
           DrawStackedTooltip(batch, npcs);
         }

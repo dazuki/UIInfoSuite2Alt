@@ -468,7 +468,7 @@ internal class ShowFestivalIcon : IDisposable
       },
       batch =>
       {
-        if (icon.containsPoint(Game1.getMouseX(), Game1.getMouseY()))
+        if (icon.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY))
         {
           IClickableMenu.drawHoverText(batch, hoverText, Game1.smallFont);
         }

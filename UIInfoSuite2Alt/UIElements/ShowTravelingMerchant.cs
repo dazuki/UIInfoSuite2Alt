@@ -248,7 +248,7 @@ public class ShowTravelingMerchant : IDisposable
         },
         batch =>
         {
-          if (_travelingMerchantIcon?.containsPoint(Game1.getMouseX(), Game1.getMouseY()) ?? false)
+          if (_travelingMerchantIcon?.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY) ?? false)
           {
             List<string> lines = [];
 

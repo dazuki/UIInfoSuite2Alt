@@ -203,7 +203,7 @@ internal class ShowCustomIcons : IDisposable
   {
     if (
       _iconComponents.Value.TryGetValue(key, out ClickableTextureComponent? comp)
-      && comp.containsPoint(Game1.getMouseX(), Game1.getMouseY())
+      && comp.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY)
     )
     {
       IClickableMenu.drawHoverText(batch, hoverText, Game1.smallFont);

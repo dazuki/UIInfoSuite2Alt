@@ -186,7 +186,7 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
         batch =>
         {
           if (
-            (current.Icon.Value?.containsPoint(Game1.getMouseX(), Game1.getMouseY()) ?? false)
+            (current.Icon.Value?.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY) ?? false)
             && !string.IsNullOrEmpty(current.HoverText)
           )
           {

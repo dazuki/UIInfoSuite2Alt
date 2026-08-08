@@ -119,10 +119,20 @@ public sealed class IconHandler
     }
     _animatedXOffset.Value = animatedX;
 
-    int yPos = (Game1.options.zoomButtons ? 290 : 260) + ExtraYOffset;
-    int xBase = Tools.GetWidthInPlayArea() - 70 + (int)Math.Round(animatedX);
+    int yPos = GetRowTopY() + ExtraYOffset;
+    int xBase = GetRightEdge() - 70 + (int)Math.Round(animatedX);
 
-    if (IsQuestLogPermanent || Game1.player.hasVisibleQuests)
+    bool questButtonShown = IsQuestLogPermanent || Game1.player.hasVisibleQuests;
+
+    if (AndroidHud.IsAndroid)
+    {
+      // The journal and menu buttons own the column the desktop vertical layout stacks into
+      if (questButtonShown)
+      {
+        xBase -= 67;
+      }
+    }
+    else if (questButtonShown)
     {
       if (UseVerticalLayout)
       {
@@ -143,6 +153,7 @@ public sealed class IconHandler
     // Clamp to >= 1: the UI constrains this to 1-10, but config.json is hand-editable and a 0
     // would throw DivideByZeroException below on every frame.
     int perRow = Math.Max(1, IconsPerRow);
+    bool scaled = AndroidHud.Begin(batch);
     for (int i = 0; i < sorted.Count; i++)
     {
       int col = i % perRow;
@@ -153,6 +164,11 @@ public sealed class IconHandler
       sorted[i].Draw(batch, pos);
     }
 
+    if (scaled)
+    {
+      AndroidHud.End(batch);
+    }
+
     // Draw hover text on top
     foreach (QueuedIcon icon in sorted)
     {
@@ -161,6 +177,25 @@ public sealed class IconHandler
 
     icons.Clear();
     _lastSortedCount.Value = -1;
+  }
+
+  /// <summary>Top of the icon row. Android tracks the journal button, which moves with the date box scale.</summary>
+  private static int GetRowTopY()
+  {
+    if (AndroidHud.IsAndroid && Game1.dayTimeMoneyBox?.questButton != null)
+    {
+      return Game1.dayTimeMoneyBox.questButton.bounds.Y;
+    }
+
+    return Game1.options.zoomButtons ? 290 : 260;
+  }
+
+  /// <summary>Right edge the row hangs off, in the space the icons draw in.</summary>
+  private static int GetRightEdge()
+  {
+    return AndroidHud.IsAndroid
+      ? (int)(Game1.uiViewport.Width / AndroidHud.Scale)
+      : Tools.GetWidthInPlayArea();
   }
 
   public void Reset(object? sender, EventArgs e)

@@ -134,7 +134,7 @@ internal class ShowToolUpgradeStatus : IDisposable
       },
       batch =>
       {
-        if (_toolUpgradeIcon.Value.containsPoint(Game1.getMouseX(), Game1.getMouseY()))
+        if (_toolUpgradeIcon.Value.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY))
         {
           IClickableMenu.drawHoverText(batch, _hoverText.Value, Game1.smallFont);
         }

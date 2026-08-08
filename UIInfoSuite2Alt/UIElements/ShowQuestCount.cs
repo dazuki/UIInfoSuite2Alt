@@ -63,6 +63,9 @@ internal class ShowQuestCount : IDisposable
       out int bgHeight
     );
 
+    // Android questButton.bounds is in the date box's scaled space
+    bool scaled = AndroidHud.Begin(Game1.spriteBatch);
+
     // Draw background
     var bgDest = new Rectangle(
       (int)(centerX - bgWidth / 2f),
@@ -87,6 +90,11 @@ internal class ShowQuestCount : IDisposable
       0.99f,
       questColor
     );
+
+    if (scaled)
+    {
+      AndroidHud.End(Game1.spriteBatch);
+    }
   }
   #endregion
 
