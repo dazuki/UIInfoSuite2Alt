@@ -263,6 +263,7 @@ internal static class DebugCommandHandler
         "ShowSeasonalBerryHazelnut",
         "ShowQuestCount",
         "ShowQuestLastDayReminder",
+        "ShowWeddingReminder",
         "ShowGoldenWalnutCount",
         "ShowGoldenWalnutAnywhere",
         "GoldenWalnutFadeOut",

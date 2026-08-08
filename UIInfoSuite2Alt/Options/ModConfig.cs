@@ -130,6 +130,7 @@ public class ModConfig
     KeybindList.ForSingle(SButton.LeftShift);
   public bool ShowQuestCount { get; set; } = true;
   public bool ShowQuestLastDayReminder { get; set; } = true;
+  public bool ShowWeddingReminder { get; set; } = true;
   public bool ShowGoldenWalnutCount { get; set; } = true;
   public bool ShowGoldenWalnutAnywhere { get; set; } = false;
   public bool GoldenWalnutFadeOut { get; set; } = false;

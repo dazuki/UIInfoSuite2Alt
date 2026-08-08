@@ -85,6 +85,7 @@
 
 - **v2.8.36**
   - Robin building-status icon now also shows [Carpenter's Apprentice](https://www.nexusmods.com/stardewvalley/mods/43035) builders, each with their own headshot and days-remaining tooltip
+  - Added a wedding reminder icon that shows the day before your wedding, so you have a day to change out of your "work clothes" before going to bed
   - Fixed bundle item hints alternating between vanilla and modded bundles from one day to the next with mods that swap bundle data on day start
   - Fixed the luck icon's best and worst states only appearing after using the shrine, never on the luckiest and unluckiest days
   - Android:

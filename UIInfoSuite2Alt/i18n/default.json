@@ -273,6 +273,8 @@
   "ShowQuestCount": "Show quest counter",
   "ShowQuestLastDayReminder": "Show quest last-day reminder",
   "QuestLastDayTooltipHeader": "Final Day Quest(s):",
+  "ShowWeddingReminder": "Show wedding reminder",
+  "WeddingTomorrow": "= Your wedding with {{name}} is tomorrow! =\n\nChange into your wedding outfit before bed.\nThe ceremony starts the moment you wake up.",
   "ShowGoldenWalnutCount": "Show Golden Walnut counter",
   "ShowGoldenWalnutAnywhere": "Show everywhere",
   "GoldenWalnutFadeOut": "Fade out when not hovering",

@@ -392,6 +392,11 @@ public partial class ModEntry
       v => ModConfig.ShowQuestLastDayReminder = v
     );
     AddBool(
+      nameof(ModConfig.ShowWeddingReminder),
+      () => ModConfig.ShowWeddingReminder,
+      v => ModConfig.ShowWeddingReminder = v
+    );
+    AddBool(
       nameof(ModConfig.ShowGoldenWalnutCount),
       () => ModConfig.ShowGoldenWalnutCount,
       v => ModConfig.ShowGoldenWalnutCount = v
