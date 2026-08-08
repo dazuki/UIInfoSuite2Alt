@@ -48,30 +48,4 @@ internal class ModOptionsPageButton
       1f
     );
   }
-
-  /// <summary>Android: hammer-icon on an inventory-slot frame.</summary>
-  public void DrawInSlot(SpriteBatch b, int x, int y)
-  {
-    const int size = 64;
-    b.Draw(
-      Game1.menuTexture,
-      new Rectangle(x, y, size, size),
-      Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10),
-      Color.White
-    );
-
-    const float iconScale = 3f;
-    float iconOffset = (size - 16 * iconScale) / 2f;
-    b.Draw(
-      _tabIcon,
-      new Vector2(x + iconOffset, y + iconOffset),
-      null,
-      Color.White,
-      0f,
-      Vector2.Zero,
-      iconScale,
-      SpriteEffects.None,
-      1f
-    );
-  }
 }

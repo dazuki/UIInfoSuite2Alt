@@ -88,10 +88,13 @@
   - Fixed bundle item hints alternating between vanilla and modded bundles from one day to the next with mods that swap bundle data on day start
   - Fixed the luck icon's best and worst states only appearing after using the shrine, never on the luckiest and unluckiest days
   - Android:
-    - Mod options are opened from a button on the inventory page instead of a tab
+    - Mod options are opened from a button in the game's Options menu, under Exit To Title
     - Mod options can now be scrolled by dragging anywhere on the page or by dragging the scrollbar
     - Fixed the menu closing itself when opening mod options after changing the Menu Padding option
-    - Fixed Calendar and billboard icon group not rendering in the players inventory
+    - Fixed calendar and billboard icon group not rendering in the players inventory
+    - Fixed the HUD icons, quest counter and buff timers ignoring the Date Box Size option
+    - Fixed HUD icon tooltips needing a tap, and that tap walking the player across the map
+    - Fixed the quest counter and last-day quest reminder overlapping the game's own buttons
 - **v2.8.35**
   - Added a "Show unmet villagers" birthday option for icons (Default: On)
     - When Off, birthday icons only show for villagers you've met (the icon will appear the moment you talk to them for the first time on their birthday)
