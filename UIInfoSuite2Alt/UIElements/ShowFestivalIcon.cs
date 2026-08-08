@@ -452,17 +452,12 @@ internal class ShowFestivalIcon : IDisposable
         // Draw static exclamation mark overlay for "today"
         if (isToday)
         {
-          float scale = 1.6f;
-          batch.Draw(
-            Game1.mouseCursors,
+          const float scale = 1.6f;
+          Tools.DrawExclamation(
+            batch,
             new Vector2(pos.X + 30 + 2.5f * scale, pos.Y + 16 + 7f * scale),
-            new Rectangle(403, 496, 5, 14),
-            Color.White,
-            0f,
-            new Vector2(2.5f, 7f),
             scale,
-            SpriteEffects.None,
-            1f
+            Tools.ExclamationOrigin
           );
         }
       },

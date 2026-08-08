@@ -63,9 +63,6 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
   private readonly bool _hasFullInventoryView;
   private readonly bool _hasCpCatValley;
 
-  private readonly PerScreen<int> _soPulseTimer = new();
-  private readonly PerScreen<int> _soPulseDelay = new();
-
   private const string BoardSigPrefix = "UIInfoSuite2Alt.BoardSig.";
   private List<(string BoardType, string DisplayName)>? _cachedModBoards;
   private int _cachedModBoardsDay = -1;
@@ -108,38 +105,17 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
     _helper.Events.Display.RenderedActiveMenu -= OnRenderedActiveMenu;
     StopWatchingMenuClose();
     _helper.Events.Input.ButtonPressed -= OnButtonPressed;
-    _helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
 
     if (showCalendarAndBillboard)
     {
       _helper.Events.Display.RenderedActiveMenu += OnRenderedActiveMenu;
       _helper.Events.Input.ButtonPressed += OnButtonPressed;
-      _helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
     }
   }
   #endregion
 
 
   #region Event subscriptions
-  private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
-  {
-    // Pulse timer for SO exclamation
-    int elapsed = (int)Game1.currentGameTime.ElapsedGameTime.TotalMilliseconds;
-    if (_soPulseTimer.Value > 0)
-    {
-      _soPulseTimer.Value -= elapsed;
-    }
-    else if (_soPulseDelay.Value > 0)
-    {
-      _soPulseDelay.Value -= elapsed;
-    }
-    else
-    {
-      _soPulseTimer.Value = 1000;
-      _soPulseDelay.Value = 3000;
-    }
-  }
-
   private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
   {
     if (e.Button is SButton.MouseLeft or SButton.ControllerA)
@@ -394,18 +370,7 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
       || GetAvailableModQuestBoards().Any(mb => HasRsvUnacceptedQuest(mb.BoardType))
     )
     {
-      float scale = 1.6f;
-      b.Draw(
-        Game1.mouseCursors,
-        new Vector2(questDest.X + questDest.Width - 3f, questDest.Y - 5f),
-        new Rectangle(403, 496, 5, 14),
-        Color.White,
-        0f,
-        Vector2.Zero,
-        scale,
-        SpriteEffects.None,
-        1f
-      );
+      Tools.DrawExclamation(b, new Vector2(questDest.X + questDest.Width - 3f, questDest.Y - 5f));
     }
 
     if (soUnlocked)
@@ -417,9 +382,10 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
         HasUnviewedOrders("") || GetAvailableModBoards().Any(mb => HasUnviewedOrders(mb.BoardType))
       )
       {
-        DrawPulsingExclamation(
+        Tools.DrawPulsingExclamation(
           b,
-          new Vector2(specialOrdersDest.X + specialOrdersDest.Width - 4f, specialOrdersDest.Y + 5f)
+          new Vector2(specialOrdersDest.X + specialOrdersDest.Width - 4f, specialOrdersDest.Y + 5f),
+          origin: Tools.ExclamationOrigin
         );
       }
     }
@@ -430,41 +396,13 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
 
       if (HasUnviewedOrders("Qi"))
       {
-        DrawPulsingExclamation(
+        Tools.DrawPulsingExclamation(
           b,
-          new Vector2(qiOrdersDest.X + qiOrdersDest.Width - 4f, qiOrdersDest.Y + 3f)
+          new Vector2(qiOrdersDest.X + qiOrdersDest.Width - 4f, qiOrdersDest.Y + 3f),
+          origin: Tools.ExclamationOrigin
         );
       }
     }
-  }
-
-  private void DrawPulsingExclamation(SpriteBatch b, Vector2 position)
-  {
-    float baseScale = 1.6f;
-    float scale = baseScale;
-    Vector2 shake = Vector2.Zero;
-
-    if (_soPulseTimer.Value > 0)
-    {
-      float pulseScale = 1f / (Math.Max(300f, Math.Abs(_soPulseTimer.Value % 1000 - 500)) / 500f);
-      scale = baseScale * pulseScale;
-      if (pulseScale > 1f)
-      {
-        shake = new Vector2(Game1.random.Next(-1, 2), Game1.random.Next(-1, 2));
-      }
-    }
-
-    b.Draw(
-      Game1.mouseCursors,
-      position + shake,
-      new Rectangle(403, 496, 5, 14),
-      Color.White,
-      0f,
-      new Vector2(2.5f, 7f),
-      scale,
-      SpriteEffects.None,
-      1f
-    );
   }
 
   private void InjectSnapComponents(IClickableMenu menu)

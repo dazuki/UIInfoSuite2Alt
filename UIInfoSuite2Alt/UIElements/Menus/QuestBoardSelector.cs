@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Input;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
 using StardewValley.Menus;
+using UIInfoSuite2Alt.Infrastructure;
 
 namespace UIInfoSuite2Alt.UIElements.Menus;
 
@@ -211,18 +212,12 @@ internal class QuestBoardSelector : IClickableMenu
       // Draw static exclamation mark next to boards with available quests
       if (!_viewedBoardTypes.Contains(_options[i].BoardType))
       {
-        float exclamationScale = 2.5f;
+        const float exclamationScale = 2.5f;
         float textWidth = font.MeasureString(_options[i].DisplayName).X;
-        b.Draw(
-          Game1.mouseCursors,
+        Tools.DrawExclamation(
+          b,
           new Vector2(contentX + textWidth + 12, textY + 4),
-          new Rectangle(403, 496, 5, 14),
-          Color.White,
-          0f,
-          Vector2.Zero,
-          exclamationScale,
-          SpriteEffects.None,
-          1f
+          exclamationScale
         );
       }
     }

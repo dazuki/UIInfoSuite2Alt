@@ -506,6 +506,64 @@ public static class Tools
     return days.Count == 0 ? null : days.Max();
   }
 
+  #region Exclamation Drawing
+  /// <summary>Origin that centres the exclamation sprite on its draw position.</summary>
+  public static readonly Vector2 ExclamationOrigin = new(2.5f, 7f);
+
+  private static readonly Rectangle ExclamationSource = new(403, 496, 5, 14);
+
+  private const int PulseDurationMs = 1000;
+  private const int PulseCycleMs = 4000;
+
+  /// <summary>Draw the exclamation mark sprite. Origin defaults to the sprite's top-left.</summary>
+  public static void DrawExclamation(
+    SpriteBatch b,
+    Vector2 position,
+    float scale = 1.6f,
+    Vector2? origin = null,
+    float layerDepth = 1f
+  )
+  {
+    b.Draw(
+      Game1.mouseCursors,
+      position,
+      ExclamationSource,
+      Color.White,
+      0f,
+      origin ?? Vector2.Zero,
+      scale,
+      SpriteEffects.None,
+      layerDepth
+    );
+  }
+
+  /// <summary>Draw the exclamation mark pulsing on a shared clock: 1s pulse, 3s rest.</summary>
+  public static void DrawPulsingExclamation(
+    SpriteBatch b,
+    Vector2 position,
+    float baseScale = 1.6f,
+    Vector2? origin = null,
+    float layerDepth = 1f
+  )
+  {
+    float scale = baseScale;
+    Vector2 shake = Vector2.Zero;
+    double phase = (Game1.currentGameTime?.TotalGameTime.TotalMilliseconds ?? 0) % PulseCycleMs;
+
+    if (phase < PulseDurationMs)
+    {
+      // Flat-topped curve: capped growth across the middle, back to base size at the edges.
+      scale = baseScale / (Math.Max(300f, Math.Abs((float)phase - 500f)) / 500f);
+      if (scale > baseScale)
+      {
+        shake = new Vector2(Game1.random.Next(-1, 2), Game1.random.Next(-1, 2));
+      }
+    }
+
+    DrawExclamation(b, position + shake, scale, origin, layerDepth);
+  }
+  #endregion
+
   #region Text Drawing
   /// <summary>Draw text with a 3-direction shadow (diagonal, down, right) for readability on varied backgrounds.</summary>
   public static void DrawShadowedText(
