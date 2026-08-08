@@ -92,6 +92,7 @@
     - Mod options are opened from a button in the game's Options menu, under Exit To Title
     - Mod options can now be scrolled by dragging anywhere on the page or by dragging the scrollbar
     - Fixed the menu closing itself when opening mod options after changing the Menu Padding option
+    - Fixed options dropdowns needing a tap to open and a second tap to select
     - Fixed calendar and billboard icon group not rendering in the players inventory
     - Fixed the HUD icons, quest counter and buff timers ignoring the Date Box Size option
     - Fixed HUD icon tooltips needing a tap, and that tap walking the player across the map
