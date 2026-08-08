@@ -91,7 +91,7 @@ public class ShowBookseller : IDisposable
         },
         batch =>
         {
-          if (_booksellerIcon.Value?.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY) ?? false)
+          if (AndroidHud.IsHovered(_booksellerIcon.Value))
           {
             IClickableMenu.drawHoverText(batch, I18n.BooksellerIsInTown(), Game1.smallFont);
           }

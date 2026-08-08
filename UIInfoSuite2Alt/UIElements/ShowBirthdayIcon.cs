@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
@@ -552,7 +552,7 @@ internal class ShowBirthdayIcon : IDisposable
         },
         batch =>
         {
-          if (icons[capturedI].containsPoint(AndroidHud.MouseX, AndroidHud.MouseY))
+          if (AndroidHud.IsHovered(icons[capturedI]))
           {
             DrawIndividualTooltip(batch, npcs[capturedI]);
           }
@@ -606,7 +606,7 @@ internal class ShowBirthdayIcon : IDisposable
       },
       batch =>
       {
-        if (icons[0].containsPoint(AndroidHud.MouseX, AndroidHud.MouseY))
+        if (AndroidHud.IsHovered(icons[0]))
         {
           DrawStackedTooltip(batch, npcs);
         }

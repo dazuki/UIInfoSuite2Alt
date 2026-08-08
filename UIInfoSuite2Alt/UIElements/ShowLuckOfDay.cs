@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -162,7 +162,7 @@ internal class ShowLuckOfDay : IDisposable
       },
       batch =>
       {
-        if (_icon.Value.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY))
+        if (AndroidHud.IsHovered(_icon.Value))
         {
           IClickableMenu.drawHoverText(batch, _hoverText.Value, Game1.smallFont);
         }
@@ -190,7 +190,7 @@ internal class ShowLuckOfDay : IDisposable
       },
       batch =>
       {
-        if (_icon.Value.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY))
+        if (AndroidHud.IsHovered(_icon.Value))
         {
           IClickableMenu.drawHoverText(batch, _hoverText.Value, Game1.smallFont);
         }
@@ -212,7 +212,7 @@ internal class ShowLuckOfDay : IDisposable
       },
       batch =>
       {
-        if (_icon.Value.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY))
+        if (AndroidHud.IsHovered(_icon.Value))
         {
           IClickableMenu.drawHoverText(batch, _hoverText.Value, Game1.smallFont);
         }

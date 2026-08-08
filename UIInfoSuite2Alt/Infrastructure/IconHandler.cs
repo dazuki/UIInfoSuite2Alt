@@ -42,7 +42,7 @@ public sealed class IconHandler
 
   public bool IsQuestLogPermanent { get; set; } = false;
 
-  /// <summary>When true, a quest count number is drawn below the journal icon, requiring more vertical clearance.</summary>
+  /// <summary>When true, a quest count number is drawn by the journal icon, requiring extra clearance.</summary>
   public bool ShowQuestCount { get; set; } = true;
 
   /// <summary>The configured icon order, keyed by icon key. Lower = more right.</summary>
@@ -130,6 +130,12 @@ public sealed class IconHandler
       if (questButtonShown)
       {
         xBase -= 67;
+
+        // The count badge and last-day clock share a column left of the journal button
+        xBase -= Math.Max(
+          UIElements.ShowQuestCount.GetAndroidSideWidth(),
+          UIElements.ShowQuestLastDayReminder.GetAndroidSideWidth()
+        );
       }
     }
     else if (questButtonShown)

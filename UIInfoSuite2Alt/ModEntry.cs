@@ -134,6 +134,11 @@ public partial class ModEntry : Mod
     helper.Events.GameLoop.GameLaunched += OnGameLaunched;
     helper.Events.Display.RenderedHud += OnRenderedHud;
 
+    if (AndroidHud.IsAndroid)
+    {
+      helper.Events.GameLoop.UpdateTicking += (_, _) => AndroidHud.ClaimTouchOverHud();
+    }
+
     RegisterCalendarAndQuestKeyBindings(helper, true);
     RegisterMonsterEradicationKeyBindings(helper, true);
     RegisterHideTreesKeyBinding(helper, true);

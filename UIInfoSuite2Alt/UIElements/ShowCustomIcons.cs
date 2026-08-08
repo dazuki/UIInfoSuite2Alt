@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -203,7 +203,7 @@ internal class ShowCustomIcons : IDisposable
   {
     if (
       _iconComponents.Value.TryGetValue(key, out ClickableTextureComponent? comp)
-      && comp.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY)
+      && AndroidHud.IsHovered(comp)
     )
     {
       IClickableMenu.drawHoverText(batch, hoverText, Game1.smallFont);

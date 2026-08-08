@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -185,10 +185,7 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
         },
         batch =>
         {
-          if (
-            (current.Icon.Value?.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY) ?? false)
-            && !string.IsNullOrEmpty(current.HoverText)
-          )
+          if (AndroidHud.IsHovered(current.Icon.Value) && !string.IsNullOrEmpty(current.HoverText))
           {
             IClickableMenu.drawHoverText(batch, current.HoverText, Game1.smallFont);
           }

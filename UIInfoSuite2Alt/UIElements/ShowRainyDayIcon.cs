@@ -131,8 +131,7 @@ internal class ShowRainyDayIcon : IDisposable
       },
       batch =>
       {
-        bool hasMouse =
-          weather.IconComponent?.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY) ?? false;
+        bool hasMouse = AndroidHud.IsHovered(weather.IconComponent);
         bool hasText = !string.IsNullOrEmpty(weather.HoverText);
         if (weather.IsRainyTomorrow && hasMouse && hasText)
         {

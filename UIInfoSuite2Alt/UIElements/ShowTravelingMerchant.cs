@@ -248,7 +248,7 @@ public class ShowTravelingMerchant : IDisposable
         },
         batch =>
         {
-          if (_travelingMerchantIcon?.containsPoint(AndroidHud.MouseX, AndroidHud.MouseY) ?? false)
+          if (AndroidHud.IsHovered(_travelingMerchantIcon))
           {
             List<string> lines = [];
 

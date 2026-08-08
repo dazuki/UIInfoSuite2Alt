@@ -16,7 +16,7 @@ namespace UIInfoSuite2Alt.UIElements;
 internal class ShowQuestLastDayReminder : IDisposable
 {
   #region Properties
-  // Clock glyph on mouseCursors, drawn over the quest journal icon.
+  // Clock glyph on mouseCursors, drawn over the quest journal icon (beside it on Android).
   private static readonly Rectangle ClockSourceRect = new(434, 475, 9, 9);
   private const float ClockScale = 3f;
 
@@ -27,7 +27,13 @@ internal class ShowQuestLastDayReminder : IDisposable
   private static readonly Color FlashColor = new(255, 100, 100);
   private const double FlashPeriodMs = 400.0;
 
+  /// <summary>Gap above the clock when it stacks under the quest count badge on Android.</summary>
+  private const int StackGap = 6;
+
+  private static readonly int ClockSize = (int)(ClockSourceRect.Width * ClockScale);
+
   private readonly IModHelper _helper;
+  private static bool _enabled;
   #endregion
 
   #region Lifecycle
@@ -44,11 +50,29 @@ internal class ShowQuestLastDayReminder : IDisposable
   public void ToggleOption(bool showReminder)
   {
     _helper.Events.Display.RenderedHud -= OnRenderedHud;
+    _enabled = showReminder;
 
     if (showReminder)
     {
       _helper.Events.Display.RenderedHud += OnRenderedHud;
     }
+  }
+
+  /// <summary>Width the clock takes up in the badge column on Android, gap included. Zero on PC.</summary>
+  internal static int GetAndroidSideWidth()
+  {
+    if (!AndroidHud.IsAndroid || !_enabled || !Game1.player.hasVisibleQuests)
+    {
+      return 0;
+    }
+
+    // Only reserves space when it takes the badge's slot; under the badge it is clear of the row
+    if (ShowQuestCount.IsBadgeVisible || GetLastDayQuestCount() <= 0)
+    {
+      return 0;
+    }
+
+    return ClockSize + StackGap;
   }
   #endregion
 
@@ -67,15 +91,30 @@ internal class ShowQuestLastDayReminder : IDisposable
       return;
     }
 
-    // Center the clock over the quest journal icon (offsets tuned against questButton.bounds), then
-    // snap to a whole-pixel top-left (origin Vector2.Zero, integer scale) so every source pixel maps
+    // Snap to a whole-pixel top-left (origin Vector2.Zero, integer scale) so every source pixel maps
     // to exactly ClockScale screen pixels - i.e. pixel perfect under PointClamp.
     Rectangle journal = Game1.dayTimeMoneyBox.questButton.bounds;
     float half = ClockSourceRect.Width * ClockScale / 2f;
-    var clockPos = new Vector2(
-      (int)Math.Round(journal.X + 46 - half),
-      (int)Math.Round(journal.Y + 23 - half)
-    );
+    Vector2 clockPos;
+
+    if (ShowQuestCount.TryGetAndroidSlot(out Vector2 slot, out int slotHeight))
+    {
+      // Under the count badge, or in its place when the badge is not drawn
+      float centerY = ShowQuestCount.IsBadgeVisible
+        ? slot.Y + slotHeight / 2f + StackGap + half
+        : slot.Y;
+      clockPos = new Vector2((int)Math.Round(slot.X - half), (int)Math.Round(centerY - half));
+    }
+    else
+    {
+      clockPos = new Vector2(
+        (int)Math.Round(journal.X + 46 - half),
+        (int)Math.Round(journal.Y + 23 - half)
+      );
+    }
+
+    // journal bounds and the badge slot are in the date box's scaled space on Android
+    bool scaled = AndroidHud.Begin(Game1.spriteBatch);
 
     float amount = (float)(
       (Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / FlashPeriodMs) + 1) / 2
@@ -129,14 +168,16 @@ internal class ShowQuestLastDayReminder : IDisposable
       Color.White * 0.8f
     );
 
-    // Hover tooltip: list the last-day quest names, one per line.
-    var clockBounds = new Rectangle(
-      (int)clockPos.X,
-      (int)clockPos.Y,
-      (int)(ClockSourceRect.Width * ClockScale),
-      (int)(ClockSourceRect.Height * ClockScale)
-    );
-    if (clockBounds.Contains(Game1.getMouseX(), Game1.getMouseY()))
+    var clockBounds = new Rectangle((int)clockPos.X, (int)clockPos.Y, ClockSize, ClockSize);
+    bool hovered = AndroidHud.IsHovered(clockBounds);
+
+    if (scaled)
+    {
+      AndroidHud.End(Game1.spriteBatch);
+    }
+
+    // Tooltip positions itself from the real cursor, so it draws outside the scaled batch
+    if (hovered)
     {
       DrawLastDayTooltip(Game1.spriteBatch, GetLastDayQuestNames());
     }

@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Menus;
 
 namespace UIInfoSuite2Alt.Infrastructure;
 
@@ -15,6 +18,9 @@ internal static class AndroidHud
 {
   private static Func<float>? _dateTimeScale;
   private static bool _resolved;
+  private static FieldInfo? _toolbarPressed;
+  private static bool _toolbarPressedResolved;
+  private static readonly List<Rectangle> HudBounds = [];
 
   public static bool IsAndroid => Constants.TargetPlatform == GamePlatform.Android;
 
@@ -38,6 +44,103 @@ internal static class AndroidHud
 
   /// <inheritdoc cref="MouseX" />
   public static int MouseY => (int)(Game1.getMouseY() / Scale);
+
+  /// <summary>
+  ///   Whether the cursor is over <paramref name="component" />. Android needs a held touch, like the
+  ///   buff icons, and claims it so tap-to-move ignores it. Plain hover on PC.
+  /// </summary>
+  public static bool IsHovered(ClickableComponent? component)
+  {
+    if (component == null)
+    {
+      return false;
+    }
+
+    if (!IsAndroid)
+    {
+      return component.containsPoint(Game1.getMouseX(), Game1.getMouseY());
+    }
+
+    // containsPoint also gates on visible, so keep that here
+    return component.visible && IsHovered(component.bounds);
+  }
+
+  /// <inheritdoc cref="IsHovered(ClickableComponent)" />
+  public static bool IsHovered(Rectangle bounds)
+  {
+    if (!IsAndroid)
+    {
+      return bounds.Contains(Game1.getMouseX(), Game1.getMouseY());
+    }
+
+    HudBounds.Add(bounds);
+
+    if (!IsTouchHeld || !bounds.Contains(MouseX, MouseY))
+    {
+      return false;
+    }
+
+    ClaimTouch();
+    return true;
+  }
+
+  /// <summary>
+  ///   Claims a touch on any HUD element drawn last frame, so tap-to-move ignores it. Must run before
+  ///   the game's update, which picks the tap target on the press itself.
+  /// </summary>
+  public static void ClaimTouchOverHud()
+  {
+    if (!IsAndroid)
+    {
+      return;
+    }
+
+    if (IsTouchHeld)
+    {
+      int x = MouseX;
+      int y = MouseY;
+      foreach (Rectangle bounds in HudBounds)
+      {
+        if (bounds.Contains(x, y))
+        {
+          ClaimTouch();
+          break;
+        }
+      }
+    }
+
+    HudBounds.Clear();
+  }
+
+  private static bool IsTouchHeld => Game1.input.GetMouseState().LeftButton == ButtonState.Pressed;
+
+  /// <summary>
+  ///   Marks the touch as taken by the HUD so TapToMove ignores it. The game clears the flag on
+  ///   release, in VirtualJoypad.releaseLeftClick.
+  /// </summary>
+  private static void ClaimTouch()
+  {
+    if (!_toolbarPressedResolved)
+    {
+      _toolbarPressedResolved = true;
+
+      // Android-only, so it cannot be referenced directly
+      _toolbarPressed = typeof(Toolbar).GetField(
+        "toolbarPressed",
+        BindingFlags.Public | BindingFlags.Static
+      );
+
+      if (_toolbarPressed == null)
+      {
+        ModEntry.MonitorObject.Log(
+          "AndroidHud: Toolbar.toolbarPressed not found, HUD taps will move the player",
+          LogLevel.Warn
+        );
+      }
+    }
+
+    _toolbarPressed?.SetValue(null, true);
+  }
 
   /// <summary>Restarts the batch under the date box scale. Only call <see cref="End" /> when true.</summary>
   public static bool Begin(SpriteBatch b)
