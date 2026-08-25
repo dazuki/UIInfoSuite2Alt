@@ -34,6 +34,8 @@ public partial class ModEntry : Mod
 
   internal const string CustomIconsAssetName = "Mods/DazUki.UIInfoSuite2Alt/CustomIcons";
 
+  internal const string ItemEffectRangesAssetName = "Mods/DazUki.UIInfoSuite2Alt/ItemEffectRanges";
+
   private const string LauncherDrawerDictAssetName = "aedenthorn.LauncherDrawer/dict";
 
   public static IMonitor MonitorObject { get; private set; } = null!;
@@ -297,6 +299,11 @@ public partial class ModEntry : Mod
     if (e.NameWithoutLocale.IsEquivalentTo(CustomIconsAssetName))
     {
       e.LoadFrom(() => new Dictionary<string, CustomIconData>(), AssetLoadPriority.Low);
+    }
+
+    if (e.NameWithoutLocale.IsEquivalentTo(ItemEffectRangesAssetName))
+    {
+      e.LoadFrom(() => new Dictionary<string, ItemEffectRangeData>(), AssetLoadPriority.Low);
     }
 
     // Add our settings as a Launcher Drawer entry. Gated on GMCM since the action opens our GMCM page.

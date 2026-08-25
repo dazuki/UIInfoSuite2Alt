@@ -34,8 +34,14 @@ internal class ShowItemEffectRanges : IDisposable
   private const string BombQualifiedId = "(O)287";
   private const string MegaBombQualifiedId = "(O)288";
 
+  private const int MinCustomRadius = 1;
+  private const int MaxCustomRadius = 50;
+
   private readonly IModHelper _helper;
   private readonly Lazy<Texture2D> _wildTreeTexture;
+
+  private Dictionary<string, ItemEffectRangeData> _customRanges = [];
+  private bool _customRangesNeedReload = true;
 
   private int _junimoHutRadius = 8; // default radius
   private bool _showItemEffectRanges;
@@ -135,13 +141,168 @@ internal class ShowItemEffectRanges : IDisposable
     _helper.Events.Display.RenderingHud -= OnRenderingHud;
     _helper.Events.Display.RenderedHud -= OnRenderedHud;
     _helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
+    _helper.Events.Content.AssetsInvalidated -= OnAssetsInvalidated;
 
     if (_showItemEffectRanges || ShowBombRange || ButtonControlShow)
     {
+      _customRangesNeedReload = true;
       _helper.Events.Display.RenderingHud += OnRenderingHud;
       _helper.Events.Display.RenderedHud += OnRenderedHud;
       _helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+      _helper.Events.Content.AssetsInvalidated += OnAssetsInvalidated;
     }
+  }
+  #endregion
+
+
+  #region Custom ranges
+  private void OnAssetsInvalidated(object? sender, AssetsInvalidatedEventArgs e)
+  {
+    foreach (IAssetName name in e.NamesWithoutLocale)
+    {
+      if (name.IsEquivalentTo(ModEntry.ItemEffectRangesAssetName))
+      {
+        _customRangesNeedReload = true;
+        break;
+      }
+    }
+  }
+
+  private void ReloadCustomRanges()
+  {
+    _customRangesNeedReload = false;
+
+    Dictionary<string, ItemEffectRangeData> data;
+    try
+    {
+      data = _helper.GameContent.Load<Dictionary<string, ItemEffectRangeData>>(
+        ModEntry.ItemEffectRangesAssetName
+      );
+    }
+    catch (Exception ex)
+    {
+      ModEntry.MonitorObject.Log(
+        $"ShowItemEffectRanges: failed to load item effect ranges asset, {ex.Message}",
+        LogLevel.Error
+      );
+      _customRanges = [];
+      return;
+    }
+
+    Dictionary<string, ItemEffectRangeData> valid = [];
+    foreach ((string key, ItemEffectRangeData rangeData) in data)
+    {
+      if (rangeData.Radius < MinCustomRadius || rangeData.Radius > MaxCustomRadius)
+      {
+        ModEntry.MonitorObject.LogOnce(
+          $"ShowItemEffectRanges: range '{key}' has an out-of-bounds radius, skipping, radius={rangeData.Radius}, allowed={MinCustomRadius}-{MaxCustomRadius}",
+          LogLevel.Warn
+        );
+        continue;
+      }
+
+      // Keys without a type prefix can never match an item
+      if (!key.StartsWith('('))
+      {
+        ModEntry.MonitorObject.LogOnce(
+          $"ShowItemEffectRanges: range '{key}' is not a qualified item ID, skipping, expected a type prefix such as (BC) or (O)",
+          LogLevel.Warn
+        );
+        continue;
+      }
+
+      if (!string.IsNullOrWhiteSpace(rangeData.Shape))
+      {
+        if (Enum.TryParse(rangeData.Shape, true, out ItemEffectRangeShape shape))
+        {
+          rangeData.ResolvedShape = shape;
+        }
+        else
+        {
+          ModEntry.MonitorObject.LogOnce(
+            $"ShowItemEffectRanges: range '{key}' has an unknown shape, using Square, shape={rangeData.Shape}, allowed={string.Join("/", Enum.GetNames<ItemEffectRangeShape>())}",
+            LogLevel.Warn
+          );
+        }
+      }
+
+      valid[key] = rangeData;
+    }
+
+    _customRanges = valid;
+
+    if (_customRanges.Count > 0)
+    {
+      ModEntry.MonitorObject.Log(
+        $"ShowItemEffectRanges: loaded custom item effect ranges, count={_customRanges.Count}, keys=[{string.Join(", ", _customRanges.Keys)}]",
+        LogLevel.Trace
+      );
+    }
+  }
+
+  private bool TryGetCustomRange(Object obj, out ItemEffectRangeData rangeData)
+  {
+    return _customRanges.TryGetValue(obj.QualifiedItemId, out rangeData!);
+  }
+
+  private static int[][] GetCustomRangeMask(ItemEffectRangeData rangeData)
+  {
+    return rangeData.ResolvedShape == ItemEffectRangeShape.Circle
+      ? GetCircularMask(rangeData.Radius)
+      : GetCircularMask(100, maxDisplaySquareRadius: rangeData.Radius);
+  }
+
+  /// <summary>Highlight one custom-range object and fill in its tooltip.</summary>
+  private void AddCustomRange(
+    Object obj,
+    ItemEffectRangeData rangeData,
+    Vector2 tile,
+    bool isCurrent,
+    bool showingAll
+  )
+  {
+    int[][] mask = GetCustomRangeMask(rangeData);
+
+    int tilesBeforeAdd = _effectiveAreaOther.Value.Count + _effectiveAreaCurrent.Value.Count;
+
+    // Show-all puts everything in the "other" set so _seenTiles catches overlaps
+    AddTilesToHighlightedArea(
+      mask,
+      isCurrent && !showingAll && rangeData.AffectsCrops,
+      (int)tile.X,
+      (int)tile.Y,
+      skipNonTillable: rangeData.AffectsCrops
+    );
+    int addedTiles =
+      _effectiveAreaOther.Value.Count + _effectiveAreaCurrent.Value.Count - tilesBeforeAdd;
+
+    if (!isCurrent)
+    {
+      if (_rangeTooltipInfo.Value != null)
+      {
+        _rangeTooltipInfo.Value.ObjectCount++;
+        _rangeTooltipInfo.Value.RawTotalTiles += addedTiles;
+        if (!rangeData.AffectsCrops)
+        {
+          _rangeTooltipInfo.Value.OccupiedTiles++;
+        }
+      }
+
+      return;
+    }
+
+    _rangeTooltipInfo.Value = new RangeTooltipInfo
+    {
+      ObjectName = obj.DisplayName,
+      SubHeader = string.IsNullOrWhiteSpace(rangeData.EffectLabel) ? null : rangeData.EffectLabel,
+      TrackOverlap = rangeData.AffectsCrops,
+      ObjectCount = 1,
+      ShowingAll = showingAll,
+      // Crop filtering already drops the object's own tile, unfiltered ranges include it
+      OccupiedTiles = rangeData.AffectsCrops ? 0 : 1,
+      RawTotalTiles = rangeData.AffectsCrops ? addedTiles : CountTilesInArray(mask),
+    };
+    _rangeTooltipInfo.Value.SetSpriteFromObject(obj);
   }
   #endregion
 
@@ -167,6 +328,11 @@ internal class ShowItemEffectRanges : IDisposable
 
     if (Game1.activeClickableMenu == null && UIElementUtils.IsRenderingNormally())
     {
+      if (_customRangesNeedReload)
+      {
+        ReloadCustomRanges();
+      }
+
       UpdateEffectiveArea();
       GetOverlapValue();
 
@@ -775,6 +941,24 @@ internal class ShowItemEffectRanges : IDisposable
 
             AddTilesToHighlightedArea(arrayToUse, false, (int)validTile.X, (int)validTile.Y);
           }
+          // Last, so a vanilla match always wins
+          else if (TryGetCustomRange(currentObject, out ItemEffectRangeData? customRange))
+          {
+            AddCustomRange(currentObject, customRange, validTile, true, ButtonShowAllRanges);
+
+            if (ButtonShowAllRanges)
+            {
+              string customId = currentObject.QualifiedItemId;
+              similarObjects = GetSimilarObjectsInLocation(o => o.QualifiedItemId == customId);
+              foreach (Object next in similarObjects)
+              {
+                if (!next.Equals(currentObject))
+                {
+                  AddCustomRange(next, customRange, next.TileLocation, false, true);
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -873,6 +1057,35 @@ internal class ShowItemEffectRanges : IDisposable
           arrayToUse = GetDistanceArray(ObjectsWithDistance.MossySeed);
           AddTilesToHighlightedArea(arrayToUse, false, (int)cursorTile.X, (int)cursorTile.Y);
         }
+        // Last, so a vanilla match always wins
+        else if (TryGetCustomRange(currentItem, out ItemEffectRangeData? customRange))
+        {
+          arrayToUse = GetCustomRangeMask(customRange);
+          AddTilesToHighlightedArea(
+            arrayToUse,
+            customRange.AffectsCrops,
+            (int)cursorTile.X,
+            (int)cursorTile.Y,
+            skipNonTillable: customRange.AffectsCrops
+          );
+
+          // Overlap only matters for crop effects
+          if (_showPlacedItemRanges && customRange.AffectsCrops)
+          {
+            string customId = currentItem.QualifiedItemId;
+            similarObjects = GetSimilarObjectsInLocation(o => o.QualifiedItemId == customId);
+            foreach (Object next in similarObjects)
+            {
+              AddTilesToHighlightedArea(
+                arrayToUse,
+                false,
+                (int)next.TileLocation.X,
+                (int)next.TileLocation.Y,
+                skipNonTillable: true
+              );
+            }
+          }
+        }
       }
 
       if (ShowBombRange)
@@ -925,12 +1138,7 @@ internal class ShowItemEffectRanges : IDisposable
       if (location != null)
       {
         var tileVec = new Vector2(point.X, point.Y);
-        bool isTillable =
-          location is SlimeHutch
-          || location.doesTileHaveProperty(point.X, point.Y, "Diggable", "Back") != null
-          || location.isTileHoeDirt(tileVec)
-          || (location.Objects.TryGetValue(tileVec, out Object? potObj) && potObj is IndoorPot);
-        if (!isTillable || IsTileBlocked(location, tileVec))
+        if (!IsTillable(location, point, tileVec) || IsTileBlocked(location, tileVec))
         {
           continue;
         }
@@ -991,13 +1199,7 @@ internal class ShowItemEffectRanges : IDisposable
 
             if (skipNonTillable)
             {
-              bool isTillable =
-                location.doesTileHaveProperty(point.X, point.Y, "Diggable", "Back") != null
-                || location.isTileHoeDirt(tileVec)
-                || (
-                  location.Objects.TryGetValue(tileVec, out Object? potObj) && potObj is IndoorPot
-                );
-              if (!isTillable || IsTileBlocked(location, tileVec))
+              if (!IsTillable(location, point, tileVec) || IsTileBlocked(location, tileVec))
               {
                 continue;
               }
@@ -1047,6 +1249,15 @@ internal class ShowItemEffectRanges : IDisposable
     }
 
     return count;
+  }
+
+  /// <summary>Whether a crop could occupy this tile. Slime hutches count throughout.</summary>
+  private static bool IsTillable(GameLocation location, Point point, Vector2 tile)
+  {
+    return location is SlimeHutch
+      || location.doesTileHaveProperty(point.X, point.Y, "Diggable", "Back") != null
+      || location.isTileHoeDirt(tile)
+      || (location.Objects.TryGetValue(tile, out Object? potObj) && potObj is IndoorPot);
   }
 
   /// <summary>
