@@ -2,6 +2,7 @@ using System;
 using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Netcode;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.TerrainFeatures;
@@ -42,22 +43,55 @@ internal static class HideTreesPatch
 
   private static Texture2D _sparkleTexture = null!;
 
+  // NetInt.Value marks the field dirty and broadcasts to every player; hiding trees is local-only.
+  private static readonly AccessTools.FieldRef<NetInt, int>? NetIntValue = TryGetNetIntValueRef();
+
+  private static AccessTools.FieldRef<NetInt, int>? TryGetNetIntValueRef()
+  {
+    try
+    {
+      return AccessTools.FieldRefAccess<NetInt, int>("value");
+    }
+    catch (Exception ex)
+    {
+      ModEntry.MonitorObject.Log(
+        $"HideTreesPatch: could not access NetInt backing field, tree hiding will sync redundant net updates. {ex.Message}",
+        LogLevel.Warn
+      );
+      return null;
+    }
+  }
+
+  private static void SetLocalOnly(NetInt field, int value)
+  {
+    if (NetIntValue != null)
+    {
+      NetIntValue(field) = value;
+      return;
+    }
+
+    field.Value = value;
+  }
+
   public static bool IsFullyHidden => _animDirection == 0 && _animStepsCompleted == TotalSteps;
   public static bool IsFullyVisible => _animDirection == 0 && _animStepsCompleted == 0;
   public static bool IsAnimating => _animDirection != 0;
 
   public static void Initialize(Harmony harmony, IModHelper helper)
   {
+    // Finalizers restore the real stage even if draw throws; postfixes are skipped on exception.
     harmony.Patch(
       original: AccessTools.Method(typeof(Tree), nameof(Tree.draw)),
       prefix: new HarmonyMethod(typeof(HideTreesPatch), nameof(Tree_Draw_Prefix)),
-      postfix: new HarmonyMethod(typeof(HideTreesPatch), nameof(Tree_Draw_Postfix))
+      postfix: new HarmonyMethod(typeof(HideTreesPatch), nameof(Tree_Draw_Postfix)),
+      finalizer: new HarmonyMethod(typeof(HideTreesPatch), nameof(Tree_Draw_Finalizer))
     );
 
     harmony.Patch(
       original: AccessTools.Method(typeof(FruitTree), nameof(FruitTree.draw)),
       prefix: new HarmonyMethod(typeof(HideTreesPatch), nameof(FruitTree_Draw_Prefix)),
-      postfix: new HarmonyMethod(typeof(HideTreesPatch), nameof(FruitTree_Draw_Postfix))
+      postfix: new HarmonyMethod(typeof(HideTreesPatch), nameof(FruitTree_Draw_Postfix)),
+      finalizer: new HarmonyMethod(typeof(HideTreesPatch), nameof(FruitTree_Draw_Finalizer))
     );
 
     harmony.Patch(
@@ -351,7 +385,7 @@ internal static class HideTreesPatch
 
     TryAdvanceAnimation();
     int treeSteps = GetTreeStepsCompleted(__instance.Tile);
-    __instance.growthStage.Value = GetWildTreeDisplayStage(__state, treeSteps);
+    SetLocalOnly(__instance.growthStage, GetWildTreeDisplayStage(__state, treeSteps));
   }
 
   private static bool Tree_ToolAction_Prefix(Tree __instance)
@@ -370,15 +404,17 @@ internal static class HideTreesPatch
 
   private static void Tree_Draw_Postfix(Tree __instance, int __state)
   {
-    if (__instance.growthStage.Value != __state)
-    {
-      __instance.growthStage.Value = __state;
-    }
+    SetLocalOnly(__instance.growthStage, __state);
 
     if (IsFullyHidden && !__instance.stump.Value && __state >= WildTreeFullGrown)
     {
       TrySpawnIdleSparkle(__instance.Tile);
     }
+  }
+
+  private static void Tree_Draw_Finalizer(Tree __instance, int __state)
+  {
+    SetLocalOnly(__instance.growthStage, __state);
   }
   #endregion
 
@@ -400,8 +436,8 @@ internal static class HideTreesPatch
     TryAdvanceAnimation();
     int treeSteps = GetTreeStepsCompleted(__instance.Tile);
     int displayStage = GetFruitTreeDisplayStage(__state.stage, treeSteps);
-    __instance.growthStage.Value = displayStage;
-    __instance.daysUntilMature.Value = FruitTree.GrowthStageToDaysUntilMature(displayStage);
+    SetLocalOnly(__instance.growthStage, displayStage);
+    SetLocalOnly(__instance.daysUntilMature, FruitTree.GrowthStageToDaysUntilMature(displayStage));
   }
 
   private static bool FruitTree_ToolAction_Prefix(FruitTree __instance)
@@ -420,20 +456,19 @@ internal static class HideTreesPatch
 
   private static void FruitTree_Draw_Postfix(FruitTree __instance, (int stage, int days) __state)
   {
-    if (__instance.growthStage.Value != __state.stage)
-    {
-      __instance.growthStage.Value = __state.stage;
-    }
-
-    if (__instance.daysUntilMature.Value != __state.days)
-    {
-      __instance.daysUntilMature.Value = __state.days;
-    }
+    SetLocalOnly(__instance.growthStage, __state.stage);
+    SetLocalOnly(__instance.daysUntilMature, __state.days);
 
     if (IsFullyHidden && !__instance.stump.Value && __state.stage >= FruitTreeFullGrown)
     {
       TrySpawnIdleSparkle(__instance.Tile);
     }
+  }
+
+  private static void FruitTree_Draw_Finalizer(FruitTree __instance, (int stage, int days) __state)
+  {
+    SetLocalOnly(__instance.growthStage, __state.stage);
+    SetLocalOnly(__instance.daysUntilMature, __state.days);
   }
   #endregion
 
