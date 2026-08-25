@@ -83,6 +83,8 @@
 
 > Most new features can be toggled on/off in the mod's in-game options menu.
 
+- **v2.9.1**
+  - Content Patcher mods can now give their own custom placed objects an effect range overlay ([documentation](docs/custom-item-effect-ranges.md))
 - **v2.9.0**
   - Robin building-status icon now also shows [Carpenter's Apprentice](https://www.nexusmods.com/stardewvalley/mods/43035) builders, each with their own headshot and days-remaining tooltip
   - Added a wedding reminder icon that shows the day before your wedding, so you have a day to change out of your "work clothes" before going to bed
@@ -432,7 +434,7 @@
 All mods listed here are **optional** and not required for UI Info Suite 2 Alternative.
 The compatability ranges from small fixes to bigger integration with mod provided APIs.
 
-- [Content Patcher](https://www.nexusmods.com/stardewvalley/mods/1915) ([Custom Icons](https://github.com/dazuki/UIInfoSuite2Alt/blob/main/docs/custom-icons.md) documentation for mod authors)
+- [Content Patcher](https://www.nexusmods.com/stardewvalley/mods/1915) ([documentation for mod authors](https://github.com/dazuki/UIInfoSuite2Alt/blob/main/docs/README.md))
 - [SpaceCore](https://www.nexusmods.com/stardewvalley/mods/1348)
 - [Generic Mod Config Menu](https://www.nexusmods.com/stardewvalley/mods/5098)
 - [Custom Bush](https://www.nexusmods.com/stardewvalley/mods/20619)
