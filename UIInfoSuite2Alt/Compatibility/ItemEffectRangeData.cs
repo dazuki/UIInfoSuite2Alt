@@ -8,6 +8,9 @@ public enum ItemEffectRangeShape
 
   /// <summary>Euclidean circle, as produced by a distance check.</summary>
   Circle,
+
+  /// <summary>Diamond, as produced by a Manhattan distance check.</summary>
+  Diamond,
 }
 
 /// <summary>An effect range declared by another mod, keyed by qualified item ID.</summary>

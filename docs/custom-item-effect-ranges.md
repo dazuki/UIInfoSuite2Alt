@@ -30,18 +30,19 @@ held (default `LeftControl`, or `LeftControl + LeftAlt` for every matching objec
 | Field | Type | Required | Default | Description |
 |---|---|:---:|---|---|
 | `Radius` | int | Yes | - | Effect radius in tiles, 1-50. |
-| `Shape` | string | No | Square | *Square* or *Circle* (case-insensitive). |
+| `Shape` | string | No | Square | *Square*, *Circle* or *Diamond* (case-insensitive). |
 | `EffectLabel` | string | No | - | Line under the item name in the tooltip. |
 | `AffectsCrops` | bool | No | false | Only highlight tiles a crop can sit on. |
 
 ## Shape and AffectsCrops
 
-All four examples below are shown with `"Radius": 4` and two objects placed, so the overlap is visible.
+All six examples below are shown with `"Radius": 4` and two objects placed, so the overlap is visible.
 
 |  | `"AffectsCrops": false` | `"AffectsCrops": true` |
 |:---:|:---:|:---:|
 | **Square** | ![Square, any tile](../.github/assets/range_square_affectscrops_false.png) | ![Square, crops only](../.github/assets/range_square_affectscrops_true.png) |
 | **Circle** | ![Circle, any tile](../.github/assets/range_circle_affectscrops_false.png) | ![Circle, crops only](../.github/assets/range_circle_affectscrops_true.png) |
+| **Diamond** | ![Diamond, any tile](../.github/assets/range_diamond_affectscrops_false.png) | ![Diamond, crops only](../.github/assets/range_diamond_affectscrops_true.png) |
 
 **Shape** is only a *drawing*. UIIS2Alt has no way to know which tiles your object really
 affects. Pick the shape that covers the same tiles your effect does, otherwise players see

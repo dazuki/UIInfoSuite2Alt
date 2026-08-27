@@ -247,9 +247,12 @@ internal class ShowItemEffectRanges : IDisposable
 
   private static int[][] GetCustomRangeMask(ItemEffectRangeData rangeData)
   {
-    return rangeData.ResolvedShape == ItemEffectRangeShape.Circle
-      ? GetCircularMask(rangeData.Radius)
-      : GetCircularMask(100, maxDisplaySquareRadius: rangeData.Radius);
+    return rangeData.ResolvedShape switch
+    {
+      ItemEffectRangeShape.Circle => GetCircularMask(rangeData.Radius),
+      ItemEffectRangeShape.Diamond => GetDiamondMask(rangeData.Radius),
+      _ => GetCircularMask(100, maxDisplaySquareRadius: rangeData.Radius),
+    };
   }
 
   /// <summary>Highlight one custom-range object and fill in its tooltip.</summary>
@@ -1488,6 +1491,30 @@ internal class ShowItemEffectRanges : IDisposable
   private static double GetDistance(int i, int j, int radius)
   {
     return Math.Sqrt((radius - i) * (radius - i) + (radius - j) * (radius - j));
+  }
+
+  private static readonly Dictionary<int, int[][]> DiamondMaskCache = [];
+
+  private static int[][] GetDiamondMask(int radius)
+  {
+    if (DiamondMaskCache.TryGetValue(radius, out int[][]? cached))
+    {
+      return cached;
+    }
+
+    int size = 2 * radius + 1;
+    var result = new int[size][];
+    for (var i = 0; i < size; i++)
+    {
+      result[i] = new int[size];
+      for (var j = 0; j < size; j++)
+      {
+        result[i][j] = Math.Abs(radius - i) + Math.Abs(radius - j) <= radius ? 1 : 0;
+      }
+    }
+
+    DiamondMaskCache[radius] = result;
+    return result;
   }
   #endregion
   #endregion
