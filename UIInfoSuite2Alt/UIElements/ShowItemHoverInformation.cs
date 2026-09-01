@@ -234,19 +234,25 @@ internal class ShowItemHoverInformation : IDisposable
         && ApiManager.GetApi<IWalkOfLifeApi>(ModCompat.WalkOfLife, out var wolApi)
       )
       {
-        float producerBonus = wolApi.GetProducerSaleBonus();
-        float anglerBonus = wolApi.GetAnglerSaleBonus();
-        if (producerBonus > 1f && IsAnimalProduct(hoveredObject))
+        if (Game1.player.professions.Contains(Farmer.shepherd) && IsAnimalProduct(hoveredObject))
         {
-          int pct = (int)Math.Round((producerBonus - 1f) * 100f);
-          wolBonusPct = $"+{pct}% ";
-          wolBonusLabel = WalkOfLifeHelper.GetProducerTitle();
+          float producerBonus = wolApi.GetProducerSaleBonus();
+          if (producerBonus > 1f)
+          {
+            int pct = (int)Math.Round((producerBonus - 1f) * 100f);
+            wolBonusPct = $"+{pct}% ";
+            wolBonusLabel = WalkOfLifeHelper.GetProducerTitle();
+          }
         }
-        else if (anglerBonus > 1f && IsFishProduct(hoveredObject))
+        else if (Game1.player.professions.Contains(Farmer.angler) && IsFishProduct(hoveredObject))
         {
-          int pct = (int)Math.Round((anglerBonus - 1f) * 100f);
-          wolBonusPct = $"+{pct}% ";
-          wolBonusLabel = WalkOfLifeHelper.GetAnglerTitle();
+          float anglerBonus = wolApi.GetAnglerSaleBonus();
+          if (anglerBonus > 1f)
+          {
+            int pct = (int)Math.Round((anglerBonus - 1f) * 100f);
+            wolBonusPct = $"+{pct}% ";
+            wolBonusLabel = WalkOfLifeHelper.GetAnglerTitle();
+          }
         }
       }
 
