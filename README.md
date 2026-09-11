@@ -86,6 +86,7 @@
 - **v2.9.1**
   - Content Patcher mods can now give their own custom placed objects an effect range overlay ([documentation](docs/custom-item-effect-ranges.md))
   - Fixed the [Walk of Life](https://www.nexusmods.com/stardewvalley/mods/24355) sale bonus in item tooltips sometimes showing without the Angler/Producer profession
+  - Fixed item tooltips not showing in the [Better Shipping Bin](https://www.nexusmods.com/stardewvalley/mods/10487) menu
 - **v2.9.0**
   - Robin building-status icon now also shows [Carpenter's Apprentice](https://www.nexusmods.com/stardewvalley/mods/43035) builders, each with their own headshot and days-remaining tooltip
   - Added a wedding reminder icon that shows the day before your wedding, so you have a day to change out of your "work clothes" before going to bed
@@ -468,6 +469,7 @@ The compatability ranges from small fixes to bigger integration with mod provide
 - [Launcher Drawer](https://www.nexusmods.com/stardewvalley/mods/48269)
 - [Chests Anywhere](https://www.nexusmods.com/stardewvalley/mods/518)
 - [One Click Shed Reloader](https://www.nexusmods.com/stardewvalley/mods/2052)
+- [Better Shipping Bin](https://www.nexusmods.com/stardewvalley/mods/10487)
 
 <p align="center">
   <a href="https://ko-fi.com/dazuki89" target="_BLANK">

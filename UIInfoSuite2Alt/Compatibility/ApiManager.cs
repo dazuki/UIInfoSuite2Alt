@@ -45,6 +45,7 @@ public static class ModCompat
   public const string LauncherDrawer = "aedenthorn.LauncherDrawer";
   public const string ChestsAnywhere = "Pathoschild.ChestsAnywhere";
   public const string OneClickShedReloader = "BitwiseJonMods.OneClickShedReloader";
+  public const string BetterShippingBin = "MindMeltMax.BetterShipping";
 
   // original UIInfoSuite variants
   public const string UIInfoSuite2 = "Annosz.UiInfoSuite2";

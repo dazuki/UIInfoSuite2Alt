@@ -42,6 +42,11 @@ public partial class ModEntry
       LauncherDrawerHelper.Initialize(Monitor);
     }
 
+    if (Helper.ModRegistry.IsLoaded(ModCompat.BetterShippingBin))
+    {
+      BetterShippingBinHelper.Initialize(Monitor);
+    }
+
     LogModRecommendations(Helper);
 
     if (configMenu is null)

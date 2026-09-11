@@ -345,6 +345,12 @@ public static class Tools
     {
       hoverItem = itemMenu.hoveredItem;
     }
+    else if (
+      BetterShippingBinHelper.TryGetHoveredItem(Game1.activeClickableMenu, out Item? binItem)
+    )
+    {
+      hoverItem = binItem;
+    }
 
     return hoverItem;
   }
