@@ -684,7 +684,7 @@ internal class ShowBirthdayIcon : IDisposable
     int points = friendship?.Points ?? 0;
     int maxHearts = Utility.GetMaximumHeartsForCharacter(npc);
     int totalHeartSlots = Math.Max(maxHearts, 10);
-    bool isDatable = npc.datable.Value;
+    bool isDatable = npc.GetData()?.CanBeRomanced ?? false;
     bool isDating = friendship?.IsDating() ?? false;
     bool isMarried = friendship?.IsMarried() ?? false;
 

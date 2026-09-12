@@ -164,8 +164,7 @@ public static class DropsHelper
     string cleanName = displayName.Replace(" Sapling", "");
     string finalName;
 
-    bool isEnglish =
-      LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.en;
+    bool isEnglish = ModEntry.IsEnglishLocale;
     if (
       !isEnglish
       || cleanName.EndsWith(I18n.Tree().Trim(), StringComparison.OrdinalIgnoreCase)

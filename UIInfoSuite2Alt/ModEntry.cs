@@ -32,6 +32,8 @@ public partial class ModEntry : Mod
 
   public static IReflectionHelper Reflection { get; private set; } = null!;
 
+  public static bool IsEnglishLocale => _modHelper.Translation.Locale.Length == 0;
+
   internal const string CustomIconsAssetName = "Mods/DazUki.UIInfoSuite2Alt/CustomIcons";
 
   internal const string ItemEffectRangesAssetName = "Mods/DazUki.UIInfoSuite2Alt/ItemEffectRanges";
