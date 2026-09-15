@@ -109,6 +109,9 @@ public partial class ExperienceBar : IDisposable
 
   // Static bar visibility for HudMessagePatch to offset vanilla notifications
   private static readonly PerScreen<int> _visibleBarCount = new();
+  private static readonly PerScreen<bool> _primaryBarVisible = new();
+
+  private const int AndroidNotificationBaseOffset = 100;
 
   private readonly IModHelper _helper;
   private readonly IVanillaPlusProfessions? _vppApi;
@@ -143,6 +146,9 @@ public partial class ExperienceBar : IDisposable
 
     _helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked_UpdateExperience;
     _helper.Events.Player.LevelChanged -= OnLevelChanged;
+
+    _visibleBarCount.ResetAllScreens();
+    _primaryBarVisible.ResetAllScreens();
 
     ExperienceBarEnabled = experienceBarEnabled;
     ExperienceBarFadeoutEnabled = experienceBarFadeoutEnabled;
@@ -359,6 +365,7 @@ public partial class ExperienceBar : IDisposable
     if (!UIElementUtils.IsRenderingNormally())
     {
       _visibleBarCount.Value = 0;
+      _primaryBarVisible.Value = false;
       return;
     }
 
@@ -400,11 +407,11 @@ public partial class ExperienceBar : IDisposable
     }
 
     // Primary experience bar
-    if (
+    _primaryBarVisible.Value =
       ExperienceBarEnabled
       && (_experienceBarVisibleTimer.Value != 0 || !ExperienceBarFadeoutEnabled)
-      && _experienceRequiredToLevel.Value > 0
-    )
+      && _experienceRequiredToLevel.Value > 0;
+    if (_primaryBarVisible.Value)
     {
       Texture2D? barIconTexture = _isMasteryActive.Value
         ? Game1.mouseCursors_1_6
@@ -872,6 +879,18 @@ public partial class ExperienceBar : IDisposable
   internal static int GetNotificationOffset()
   {
     return _visibleBarCount.Value * BarStackOffset;
+  }
+
+  /// <summary>Android: lift for vanilla HUD notifications so they clear the whole bar stack.</summary>
+  internal static int GetAndroidNotificationOffset()
+  {
+    int stacked = _visibleBarCount.Value;
+    if (!_primaryBarVisible.Value && stacked == 0)
+    {
+      return 0;
+    }
+
+    return AndroidNotificationBaseOffset + stacked * BarStackOffset;
   }
 
   private int GetExperienceRequiredToLevel(int currentLevel)

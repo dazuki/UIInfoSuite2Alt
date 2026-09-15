@@ -22,7 +22,53 @@ internal static class AndroidHud
   private static bool _toolbarPressedResolved;
   private static readonly List<Rectangle> HudBounds = [];
 
+  private static bool _toolbarResolved;
+  private static bool _toolbarAvailable;
+  private static PropertyInfo? _toolbarInstance;
+  private static PropertyInfo? _toolbarItemSlotSize;
+  private static FieldInfo? _toolbarAlignTop;
+  private static FieldInfo? _toolbarItemWidth;
+  private static FieldInfo? _verticalToolbar;
+
   public static bool IsAndroid => Constants.TargetPlatform == GamePlatform.Android;
+
+  /// <summary>Height a bottom toolbar covers. 0 on PC, or when the toolbar is vertical or at the top.</summary>
+  public static int ToolbarBottomInset
+  {
+    get
+    {
+      if (!IsAndroid || !ResolveToolbar() || IsToolbarVertical)
+      {
+        return 0;
+      }
+
+      object? toolbar = _toolbarInstance!.GetValue(null);
+      if (toolbar == null || (bool)_toolbarAlignTop!.GetValue(toolbar)!)
+      {
+        return 0;
+      }
+
+      // Toolbar box spans from screenHeight - 12 up by itemSlotSize + 24
+      return (int)_toolbarItemSlotSize!.GetValue(toolbar)! + 36;
+    }
+  }
+
+  /// <summary>Width a vertical toolbar covers. 0 on PC, or when the toolbar is horizontal.</summary>
+  public static int ToolbarLeftInset
+  {
+    get
+    {
+      if (!IsAndroid || !ResolveToolbar() || !IsToolbarVertical)
+      {
+        return 0;
+      }
+
+      // Item column plus the 16px separator, as in Toolbar.resetToolbar
+      return (int)_toolbarItemWidth!.GetValue(null)! + 16;
+    }
+  }
+
+  private static bool IsToolbarVertical => (bool)_verticalToolbar!.GetValue(Game1.options)!;
 
   /// <summary>The "Date box size" option, 0.5-2.0. Always 1 on PC.</summary>
   public static float Scale
@@ -169,6 +215,55 @@ internal static class AndroidHud
   {
     b.End();
     b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+  }
+
+  private static bool ResolveToolbar()
+  {
+    if (_toolbarResolved)
+    {
+      return _toolbarAvailable;
+    }
+
+    _toolbarResolved = true;
+
+    // Android-only members, so they cannot be referenced directly from a desktop build
+    _toolbarInstance = typeof(Toolbar).GetProperty(
+      "Instance",
+      BindingFlags.Public | BindingFlags.Static
+    );
+    _toolbarItemSlotSize = typeof(Toolbar).GetProperty(
+      "itemSlotSize",
+      BindingFlags.Public | BindingFlags.Instance
+    );
+    _toolbarAlignTop = typeof(Toolbar).GetField(
+      "alignTop",
+      BindingFlags.Public | BindingFlags.Instance
+    );
+    _toolbarItemWidth = typeof(Toolbar).GetField(
+      "toolBarItemWidth",
+      BindingFlags.Public | BindingFlags.Static
+    );
+    _verticalToolbar = typeof(StardewValley.Options).GetField(
+      "verticalToolbar",
+      BindingFlags.Public | BindingFlags.Instance
+    );
+
+    _toolbarAvailable =
+      _toolbarInstance != null
+      && _toolbarItemSlotSize != null
+      && _toolbarAlignTop != null
+      && _toolbarItemWidth != null
+      && _verticalToolbar != null;
+
+    if (!_toolbarAvailable)
+    {
+      ModEntry.MonitorObject.Log(
+        "AndroidHud: Toolbar layout members not found, HUD elements may overlap the toolbar",
+        LogLevel.Warn
+      );
+    }
+
+    return _toolbarAvailable;
   }
 
   private static Func<float>? ResolveScaleGetter()

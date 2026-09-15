@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewValley;
+using UIInfoSuite2Alt.Infrastructure;
 
 namespace UIInfoSuite2Alt.UIElements.Experience;
 
@@ -37,6 +38,7 @@ public class DisplayedExperienceBar
       experienceDifferenceBetweenLevels,
       maxBarWidth
     );
+    yOffset += AndroidHud.ToolbarBottomInset;
     float leftSide = GetExperienceBarLeftSide();
     int bottom = Game1.graphics.GraphicsDevice.Viewport.TitleSafeArea.Bottom - yOffset;
 
@@ -169,7 +171,8 @@ public class DisplayedExperienceBar
 
   private static float GetExperienceBarLeftSide()
   {
-    float leftSide = Game1.graphics.GraphicsDevice.Viewport.TitleSafeArea.Left;
+    float leftSide =
+      Game1.graphics.GraphicsDevice.Viewport.TitleSafeArea.Left + AndroidHud.ToolbarLeftInset;
 
     if (Game1.isOutdoorMapSmallerThanViewport())
     {
