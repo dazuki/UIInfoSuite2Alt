@@ -85,6 +85,15 @@
 
 - **v2.9.1**
   - Content Patcher mods can now give their own custom placed objects an effect range overlay ([documentation](docs/custom-item-effect-ranges.md))
+  - Settings are now backed up outside the Mods folder (in SMAPI's mod-data folder) and restored automatically if `config.json` goes missing, so they survive a clean reinstall
+    - An existing `config.json` always wins
+  - Added a "Reset All Settings" button at the bottom of the mod's options tab
+  - Reworked the `uiis` console commands:
+    - `uiis config debug` - Current config values (was `uiis config`)
+    - `uiis config reset` - Reset every setting to its default (needs confirmation)
+    - `uiis predict here` - Predictions for the location you are standing in (was `uiis predict`)
+    - `uiis predict <location>` - Predictions for a named location
+  - `uiis`, `uiis config` and `uiis predict` now list their subcommands
   - Fixed the [Walk of Life](https://www.nexusmods.com/stardewvalley/mods/24355) sale bonus in item tooltips sometimes showing without the Angler/Producer profession
   - Fixed item tooltips not showing in the [Better Shipping Bin](https://www.nexusmods.com/stardewvalley/mods/10487) menu
   - Android:
