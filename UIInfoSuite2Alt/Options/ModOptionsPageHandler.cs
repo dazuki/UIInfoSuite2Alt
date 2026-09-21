@@ -16,6 +16,7 @@ using UIInfoSuite2Alt.Infrastructure.Helpers;
 using UIInfoSuite2Alt.Patches;
 using UIInfoSuite2Alt.UIElements;
 using UIInfoSuite2Alt.UIElements.Experience;
+using UIInfoSuite2Alt.UIElements.Menus;
 
 namespace UIInfoSuite2Alt.Options;
 
@@ -149,7 +150,12 @@ internal class ModOptionsPageHandler : IDisposable
   private readonly PerScreen<OptionsButton?> _nativeOptionsButton = new();
   private bool _windowResizing;
 
-  public ModOptionsPageHandler(IModHelper helper, ModConfig config, Action saveConfig)
+  public ModOptionsPageHandler(
+    IModHelper helper,
+    ModConfig config,
+    Action saveConfig,
+    Action resetConfig
+  )
   {
     _helper = helper;
     _hasBgm = GameMenuHelper.HasBetterGameMenu;
@@ -1229,6 +1235,23 @@ internal class ModOptionsPageHandler : IDisposable
       );
     }
 
+    _currentTarget.Add(
+      new ModOptionsSmallButton(
+        I18n.Button_ResetToDefaults(),
+        whichOption++,
+        () =>
+          Game1.activeClickableMenu?.SetChildMenu(
+            new ConfirmDialog(
+              I18n.Button_ResetToDefaults(),
+              I18n.Confirm_ResetToDefaults(),
+              resetConfig
+            )
+          ),
+        isCentered: true,
+        playClickSound: false
+      )
+    );
+
     // Build the initial visible list from sections + expanded state
     RebuildVisibleList();
 
@@ -1244,6 +1267,8 @@ internal class ModOptionsPageHandler : IDisposable
     {
       item.Dispose();
     }
+
+    DetachFromOpenMenu();
 
     _modOptionsPage.Value?.Dispose();
     _modOptionsPage.Value = null;
@@ -1263,6 +1288,77 @@ internal class ModOptionsPageHandler : IDisposable
       _helper.Events.Display.RenderedActiveMenu -= OnRenderedMenu;
       GameRunner.instance.Window.ClientSizeChanged -= OnWindowClientSizeChanged;
       _helper.Events.Display.WindowResized -= OnWindowResized;
+    }
+  }
+
+  /// <summary>
+  /// Strip the injected page and button from a GameMenu that is open right now. A handler recreated
+  /// underneath one (on a config reset) would otherwise leave the menu pointing at a disposed page
+  /// and stack a second native options button.
+  /// </summary>
+  private void DetachFromOpenMenu()
+  {
+    if (Game1.activeClickableMenu is not GameMenu gameMenu)
+    {
+      return;
+    }
+
+    RemoveNativeOptionsButton(gameMenu);
+
+    if (_modOptionsPage.Value == null)
+    {
+      return;
+    }
+
+    int pageIndex = gameMenu.pages.IndexOf(_modOptionsPage.Value);
+    if (pageIndex < 0)
+    {
+      return;
+    }
+
+    gameMenu.pages.RemoveAt(pageIndex);
+    if (gameMenu.currentTab == pageIndex)
+    {
+      gameMenu.currentTab = GameMenu.optionsTab;
+      ModEntry.MonitorObject.Log(
+        "ModOptionsPageHandler: options page removed while open, switched to the vanilla options tab",
+        LogLevel.Trace
+      );
+    }
+  }
+
+  /// <summary>
+  /// Android only: the button lives in the vanilla OptionsPage's own list, which outlives this
+  /// handler, so it has to be removed explicitly or the next handler stacks another on top.
+  /// </summary>
+  private void RemoveNativeOptionsButton(GameMenu gameMenu)
+  {
+    OptionsButton? button = _nativeOptionsButton.Value;
+    if (
+      button == null
+      || GameMenu.optionsTab >= gameMenu.pages.Count
+      || gameMenu.pages[GameMenu.optionsTab] is not OptionsPage page
+    )
+    {
+      return;
+    }
+
+    List<OptionsElement>? options = ModEntry
+      .Reflection.GetField<List<OptionsElement>>(page, "options", false)
+      ?.GetValue();
+
+    if (options?.Remove(button) == true)
+    {
+      ModEntry.MonitorObject.Log(
+        "ModOptionsPageHandler: removed the native options button while the menu was open",
+        LogLevel.Trace
+      );
+    }
+
+    _nativeOptionsButton.Value = null;
+    if (ReferenceEquals(OptionsButtonIconPatch.Target, button))
+    {
+      OptionsButtonIconPatch.Target = null;
     }
   }
 

@@ -10,18 +10,21 @@ internal class ModOptionsSmallButton : ModOptionsElement
 {
   private readonly Action _onClick;
   private readonly bool _isCentered;
+  private readonly bool _playClickSound;
   private bool _boundsInitialized;
 
   public ModOptionsSmallButton(
     string label,
     int whichOption,
     Action onClick,
-    bool isCentered = false
+    bool isCentered = false,
+    bool playClickSound = true
   )
     : base(label, whichOption)
   {
     _onClick = onClick;
     _isCentered = isCentered;
+    _playClickSound = playClickSound;
   }
 
   private void EnsureBounds()
@@ -62,7 +65,11 @@ internal class ModOptionsSmallButton : ModOptionsElement
   {
     if (Bounds.Contains(x, y))
     {
-      Game1.playSound("drumkit6");
+      if (_playClickSound)
+      {
+        Game1.playSound("drumkit6");
+      }
+
       _onClick();
     }
   }

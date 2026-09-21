@@ -179,7 +179,10 @@
   "Paragraph.KeybindsInGmcm": "Keybinds can be found in Generic Mod Config Menu.",
   //Settings - Buttons
   "Button.OpenGmcmOptions": "Open GMCM Options",
+  "Button.ResetToDefaults": "Reset All Settings",
   "SmallText.GmcmMissing": "Generic Mod Config Menu is not installed.",
+  //Settings - Reset confirmation
+  "Confirm.ResetToDefaults": "Every setting, including keybinds, will be restored to its default.",
   //Settings - Section headers
   "Section.Keybinds": "Keybinds",
   "Section.HudIcons": "HUD Icons",

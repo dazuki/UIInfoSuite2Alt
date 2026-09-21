@@ -60,7 +60,7 @@ public partial class ModEntry
       reset: () => ModConfig = new Options.ModConfig(),
       save: () =>
       {
-        Helper.WriteConfig(ModConfig);
+        SaveConfig();
         ApplyFeatures();
       }
     );

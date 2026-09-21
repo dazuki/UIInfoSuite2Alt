@@ -24,13 +24,20 @@ internal static class DebugCommandHandler
 {
   private static IModHelper _helper = null!;
   private static IMonitor _monitor = null!;
+  private static Action _resetConfig = null!;
   private static string _harmonyId = null!;
   private static string _modVersion = null!;
 
-  public static void Register(IModHelper helper, IMonitor monitor, IManifest manifest)
+  public static void Register(
+    IModHelper helper,
+    IMonitor monitor,
+    IManifest manifest,
+    Action resetConfig
+  )
   {
     _helper = helper;
     _monitor = monitor;
+    _resetConfig = resetConfig;
     _harmonyId = manifest.UniqueID;
     _modVersion = manifest.Version.ToString();
     helper.ConsoleCommands.Add(
@@ -51,10 +58,10 @@ internal static class DebugCommandHandler
           ShowHelp();
           break;
         case "config":
-          ShowConfig();
+          HandleConfigCommand(args);
           break;
         case "predict":
-          ShowPrediction();
+          HandlePredictCommand(args);
           break;
         default:
           _monitor.Log(
@@ -75,11 +82,11 @@ internal static class DebugCommandHandler
     _monitor.Log($"DebugCommandHandler: {sub}\n{sb.ToString().TrimEnd()}", LogLevel.Info);
   }
 
-  /// <summary>Logs the output and also writes it to debug/{sub}_{timestamp}.json in the mod folder.</summary>
-  private static void OutputWithFile(string sub, StringBuilder sb)
+  /// <summary>Logs the output and also writes it to debug/{sub}_{farmer}[-{location}]-{timestamp}.json in the mod folder.</summary>
+  private static void OutputWithFile(string sub, StringBuilder sb, string? locationName = null)
   {
     string content = sb.ToString().TrimEnd();
-    string? path = WriteDebugFile(sub, content);
+    string? path = WriteDebugFile(sub, content, locationName);
     string suffix = path != null ? $"\n({sub} debug file created: {path})" : "";
     _monitor.Log($"DebugCommandHandler: {sub}\n{content}{suffix}", LogLevel.Info);
   }
@@ -119,7 +126,8 @@ internal static class DebugCommandHandler
     if (sub == "config")
     {
       sb.AppendLine($"  // ");
-      sb.AppendLine($"  // (this debug file can also replace the existing config.json file)");
+      sb.AppendLine($"  // This file is a valid config.json. To use these settings, rename it to");
+      sb.AppendLine($"  // config.json and drop it into the mod folder, replacing the one there.");
     }
 
     sb.AppendLine();
@@ -176,15 +184,18 @@ internal static class DebugCommandHandler
     return string.IsNullOrWhiteSpace(cleaned) ? "unknown" : cleaned;
   }
 
-  private static string? WriteDebugFile(string sub, string content)
+  private static string? WriteDebugFile(string sub, string content, string? locationName)
   {
     try
     {
       string dir = Path.Combine(_helper.DirectoryPath, "debug");
       Directory.CreateDirectory(dir);
-      // Predictions are unique per farmer, so tag the file with the farmer name.
-      string farmer = sub == "predict" ? $"_{SanitizeFileName(Game1.player?.Name)}" : "";
-      string path = Path.Combine(dir, $"{sub}{farmer}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.json");
+      string farmer = SanitizeFileName(Game1.player?.Name);
+      string location = locationName != null ? $"-{SanitizeFileName(locationName)}" : "";
+      string path = Path.Combine(
+        dir,
+        $"{sub}_{farmer}{location}-{DateTime.Now:yyMMdd_HHmmss}.json"
+      );
       File.WriteAllText(path, content);
       return path;
     }
@@ -202,11 +213,57 @@ internal static class DebugCommandHandler
   {
     var sb = new StringBuilder();
     sb.AppendLine("Available subcommands:");
-    sb.AppendLine("  uiis config  - current config values");
-    sb.AppendLine(
-      "  uiis predict - predictions for the current location (garbage cans, artifact spots, shafts)"
-    );
+    sb.AppendLine("  uiis config - config subcommands");
+    sb.AppendLine("  uiis predict - prediction subcommands (garbage cans, artifact spots, shafts)");
     Output("help", sb);
+  }
+
+  private static void HandleConfigCommand(string[] args)
+  {
+    string action = args.Length > 1 ? args[1].ToLowerInvariant() : "help";
+    switch (action)
+    {
+      case "debug":
+        ShowConfig();
+        break;
+      case "reset":
+        ResetConfig(args.Length > 2 && args[2].ToLowerInvariant() == "confirm");
+        break;
+      case "help":
+        ShowConfigHelp();
+        break;
+      default:
+        _monitor.Log(
+          $"DebugCommandHandler: unknown config subcommand '{action}', run 'uiis config' for a list",
+          LogLevel.Info
+        );
+        break;
+    }
+  }
+
+  private static void ShowConfigHelp()
+  {
+    var sb = new StringBuilder();
+    sb.AppendLine("Available config subcommands:");
+    sb.AppendLine("  uiis config debug - current config values");
+    sb.AppendLine("  uiis config reset - reset every setting to its default");
+    Output("config", sb);
+  }
+
+  /// <summary>Resets every setting to its default, overwriting the mod-data backup.</summary>
+  private static void ResetConfig(bool confirmed)
+  {
+    if (!confirmed)
+    {
+      _monitor.Log(
+        "DebugCommandHandler: 'config reset' restores every setting, including keybinds, to its default and overwrites the config backup. Run 'uiis config reset confirm' to proceed",
+        LogLevel.Warn
+      );
+      return;
+    }
+
+    _resetConfig();
+    _monitor.Log("DebugCommandHandler: config reset to defaults", LogLevel.Info);
   }
 
   // Mirrors the GMCM section grouping; unmapped properties land in "Other".
@@ -429,15 +486,79 @@ internal static class DebugCommandHandler
     }
   }
 
-  private static void ShowPrediction()
+  private static void HandlePredictCommand(string[] args)
   {
+    string action = args.Length > 1 ? args[1].ToLowerInvariant() : "help";
+    if (action == "help")
+    {
+      ShowPredictHelp();
+      return;
+    }
+
     if (!Context.IsWorldReady || Game1.currentLocation == null)
     {
       _monitor.Log("DebugCommandHandler: 'uiis predict' requires a loaded save", LogLevel.Info);
       return;
     }
 
-    GameLocation location = Game1.currentLocation;
+    if (action == "here")
+    {
+      ShowPrediction(Game1.currentLocation);
+      return;
+    }
+
+    // Joined rather than args[1] alone, so a name typed with spaces fails by name instead of silently
+    string name = string.Join(" ", args.Skip(1));
+    GameLocation? location = ResolveLocation(name);
+    if (location == null)
+    {
+      _monitor.Log(
+        $"DebugCommandHandler: no location named '{name}', run 'uiis predict' for usage",
+        LogLevel.Info
+      );
+      return;
+    }
+
+    if (location.map == null)
+    {
+      _monitor.Log(
+        $"DebugCommandHandler: '{location.NameOrUniqueName}' has no map loaded, so its garbage cans and artifact spots can't be read. Visit it once this session, then try again",
+        LogLevel.Info
+      );
+      return;
+    }
+
+    ShowPrediction(location);
+  }
+
+  /// <summary>Exact match first, then a case-insensitive scan of loaded locations.</summary>
+  private static GameLocation? ResolveLocation(string name)
+  {
+    GameLocation? location = Game1.getLocationFromName(name);
+    if (location != null)
+    {
+      return location;
+    }
+
+    return Game1.locations.FirstOrDefault(loc =>
+      string.Equals(loc.Name, name, StringComparison.OrdinalIgnoreCase)
+      || string.Equals(loc.NameOrUniqueName, name, StringComparison.OrdinalIgnoreCase)
+    );
+  }
+
+  private static void ShowPredictHelp()
+  {
+    var sb = new StringBuilder();
+    sb.AppendLine("Available predict subcommands:");
+    sb.AppendLine("  uiis predict here - predictions for the location you are standing in");
+    sb.AppendLine(
+      "  uiis predict <location> - predictions for a named location, e.g. 'uiis predict Town'"
+    );
+    Output("predict", sb);
+  }
+
+  private static void ShowPrediction(GameLocation location)
+  {
     var sb = new StringBuilder();
     AppendHeader(sb, "predict");
     sb.AppendLine("  // Context");
@@ -483,7 +604,7 @@ internal static class DebugCommandHandler
     sb.AppendLine("  // Harmony patches by other mods on vanilla methods used by predictions");
     AppendPredictionPatchesJson(sb);
     sb.AppendLine("}");
-    OutputWithFile("predict", sb);
+    OutputWithFile("predict", sb, location.NameOrUniqueName);
   }
 
   private static void AppendGarbageCansJson(StringBuilder sb, GameLocation location)

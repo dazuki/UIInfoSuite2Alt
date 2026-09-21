@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using HarmonyLib;
 using StardewModdingAPI;
@@ -40,12 +41,69 @@ public partial class ModEntry : Mod
 
   private const string LauncherDrawerDictAssetName = "aedenthorn.LauncherDrawer/dict";
 
+  /// <summary>Key for the config copy kept in SMAPI's mod-data folder.</summary>
+  private const string ConfigBackupKey = "config-backup";
+
   public static IMonitor MonitorObject { get; private set; } = null!;
+
+  /// <summary>
+  /// Read config.json, restoring it from the mod-data backup first when the file is missing. The
+  /// backup sits outside the Mods folder, so it survives wiping that folder for a clean reinstall.
+  /// config.json wins when both exist, so a config shipped with a mod collection is never shadowed.
+  /// </summary>
+  private static ModConfig LoadConfig()
+  {
+    if (!File.Exists(Path.Combine(_modHelper.DirectoryPath, "config.json")))
+    {
+      ModConfig? backup = null;
+      try
+      {
+        backup = _modHelper.Data.ReadGlobalData<ModConfig>(ConfigBackupKey);
+      }
+      catch (Exception ex)
+      {
+        MonitorObject.LogOnce(
+          $"ModEntry: could not read the config backup, using defaults, {ex.Message}",
+          LogLevel.Warn
+        );
+      }
+
+      if (backup != null)
+      {
+        _modHelper.WriteConfig(backup);
+        MonitorObject.Log(
+          "ModEntry: no config.json found, restored settings from the mod-data backup",
+          LogLevel.Info
+        );
+      }
+    }
+
+    // Fills in properties added since the backup was written, and creates the file if neither existed
+    ModConfig config = _modHelper.ReadConfig<ModConfig>();
+    SyncConfigBackup(config);
+    return config;
+  }
+
+  private static void SyncConfigBackup(ModConfig config)
+  {
+    try
+    {
+      _modHelper.Data.WriteGlobalData(ConfigBackupKey, config);
+    }
+    catch (Exception ex)
+    {
+      MonitorObject.LogOnce(
+        $"ModEntry: could not write the config backup, {ex.Message}",
+        LogLevel.Warn
+      );
+    }
+  }
 
   /// <summary>Save the global config.json to disk.</summary>
   public static void SaveConfig()
   {
     _modHelper.WriteConfig(ModConfig);
+    SyncConfigBackup(ModConfig);
 
     var newSnapshot = ModConfig.SnapshotToggles();
     if (_lastConfigSnapshot != null)
@@ -133,9 +191,9 @@ public partial class ModEntry : Mod
       LogLevel.Trace
     );
 
-    ModConfig = Helper.ReadConfig<ModConfig>();
+    ModConfig = LoadConfig();
 
-    DebugCommandHandler.Register(helper, Monitor, ModManifest);
+    DebugCommandHandler.Register(helper, Monitor, ModManifest, ResetConfigToDefaults);
 
     helper.Events.Content.AssetRequested += OnAssetRequested;
     helper.Events.GameLoop.ReturnedToTitle += OnReturnedToTitle;
@@ -245,9 +303,19 @@ public partial class ModEntry : Mod
     }
 
     // Re-read config (may have been edited externally)
-    ModConfig = Helper.ReadConfig<ModConfig>();
+    ModConfig = LoadConfig();
     BundleHelper.ClearCaches();
     UnlockableBundleHelper.ClearCache();
+    ApplyFeatures();
+  }
+
+  /// <summary>
+  /// ApplyFeatures recreates the options page handler, so its elements rebind to the new instance.
+  /// </summary>
+  private void ResetConfigToDefaults()
+  {
+    ModConfig = new ModConfig();
+    SaveConfig();
     ApplyFeatures();
   }
 
@@ -287,7 +355,12 @@ public partial class ModEntry : Mod
     IconHandler.Handler.IconsPerRow = ModConfig.IconsPerRow;
     IconHandler.Handler.ShowQuestCount = ModConfig.ShowQuestCount;
     _modOptionsPageHandler?.Dispose();
-    _modOptionsPageHandler = new ModOptionsPageHandler(Helper, ModConfig, SaveConfig);
+    _modOptionsPageHandler = new ModOptionsPageHandler(
+      Helper,
+      ModConfig,
+      SaveConfig,
+      ResetConfigToDefaults
+    );
   }
 
   private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
