@@ -59,6 +59,23 @@
 
 <hr />
 
+<p align="center">
+  <img src=".github/assets/custom-ranges-title-2.9.1.png" alt="Custom Item Effect Ranges For Content Patcher Mods" />
+</p>
+
+<p align="center">
+  <img src=".github/assets/custom-ranges-2.9.1.png" alt="Custom Item Effect Ranges" />
+  <br>
+  (requires v2.9.1 or newer)
+</p>
+
+<p align="center">
+  Give your custom made placed objects an effect range overlay. Read more here:<br>
+  <b><a href="docs/custom-item-effect-ranges.md">Custom Item Effect Ranges Documentation</a></b>
+</p>
+
+<hr />
+
 ![translations](https://raw.githubusercontent.com/dazuki/UIInfoSuite2Alt/master/.github/assets/translations.png)
 
 ❤️ Big **THANK YOU** to All Translators that make this mod available in so many different languages! ❤️
