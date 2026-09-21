@@ -18,7 +18,6 @@ public static class ModCompat
   public const string SunberryVillageCp = "skellady.SBVCP";
   public const string EscasModdingPlugins = "Esca.EMP";
   public const string SwordAndSorcery = "KCC.SnS";
-  public const string NpcMapLocations = "Bouhm.NPCMapLocations";
   public const string SpaceCore = "spacechase0.SpaceCore";
   public const string VanillaPlusProfessions = "KediDili.VanillaPlusProfessions";
   public const string UnlockableBundles = "DLX.Bundles";

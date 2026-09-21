@@ -209,12 +209,6 @@ public partial class ModEntry : Mod
     var recommendations = new (string ModId, string Name, int NexusId, string Reason)[]
     {
       (ModCompat.Gmcm, "Generic Mod Config Menu", 5098, "Required to Change Keybinds in-game"),
-      (
-        ModCompat.NpcMapLocations,
-        "NPC Map Locations",
-        239,
-        "UIIS2Alt npc map tracking was Removed in v2.7.0"
-      ),
     };
 
     foreach (var (modId, name, nexusId, reason) in recommendations)
