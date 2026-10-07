@@ -525,8 +525,11 @@ public partial class ExperienceBar : IDisposable
       FishingRod => (int)SkillType.Fishing,
       Pickaxe => (int)SkillType.Mining,
       MeleeWeapon weapon when weapon.Name != "Scythe" => (int)SkillType.Combat,
-      _ when Game1.currentLocation is Farm or FarmHouse && currentItem is not Axe => (int)
-        SkillType.Farming,
+      _ when (
+        Game1.currentLocation is Farm or FarmHouse or IslandWest or Cellar
+        || string.Equals(Game1.currentLocation.Name, "Greenhouse", StringComparison.OrdinalIgnoreCase)
+      )
+        && currentItem is not Axe => (int)SkillType.Farming,
       _ => (int)SkillType.Foraging,
     };
   }
