@@ -55,12 +55,12 @@ public partial class ExperienceBar : IDisposable
 
   private static readonly Dictionary<SkillType, Color> ExperienceFillColor = new()
   {
-    [SkillType.Farming] = new Color(255, 251, 35, 0.38f),
-    [SkillType.Fishing] = new Color(17, 84, 252, 0.63f),
-    [SkillType.Foraging] = new Color(0, 234, 0, 0.63f),
-    [SkillType.Mining] = new Color(145, 104, 63, 0.63f),
-    [SkillType.Combat] = new Color(204, 0, 3, 0.63f),
-    [SkillType.Luck] = new Color(232, 223, 42, 0.63f),
+    [SkillType.Farming] = new Color(255 / 255f, 251 / 255f, 35 / 255f, 0.63f),
+    [SkillType.Fishing] = new Color(17 / 255f, 84 / 255f, 252 / 255f, 0.63f),
+    [SkillType.Foraging] = new Color(0, 234 / 255f, 0, 0.63f),
+    [SkillType.Mining] = new Color(101 / 255f, 67 / 255f, 33 / 255f, 0.63f),
+    [SkillType.Combat] = new Color(204 / 255f, 0, 3 / 255f, 0.63f),
+    [SkillType.Luck] = new Color(232 / 255f, 223 / 255f, 42 / 255f, 0.63f),
   };
 
   private readonly PerScreen<int> _previousMasteryExperience = new();
