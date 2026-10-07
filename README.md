@@ -85,7 +85,7 @@
 - [Русский](https://www.nexusmods.com/stardewvalley/mods/43168) - ReyRoyce
 - [Tiếng Việt](https://www.nexusmods.com/stardewvalley/mods/43298) - valesaren
 - [日本語](https://www.nexusmods.com/stardewvalley/mods/43335) - tchuks
-- [Türkçe](https://www.nexusmods.com/stardewvalley/mods/43359) - Bortakbosna
+- [Türkçe](https://www.nexusmods.com/stardewvalley/mods/43359) - Suppew
 - [한국어](https://www.nexusmods.com/stardewvalley/mods/43452) - jjongleee
 - [Española](https://www.nexusmods.com/stardewvalley/mods/43900) - SrNemoa
 - [Magyar](https://www.nexusmods.com/stardewvalley/mods/45218) - ArcsiHUN
@@ -93,6 +93,7 @@
 - [Français](https://www.nexusmods.com/stardewvalley/mods/46333) - Furaxx31
 - [Bahasa Indonesia](https://www.nexusmods.com/stardewvalley/mods/46341) - BabangUcok
 - [Български](https://www.nexusmods.com/stardewvalley/mods/45619) - AcTePuKc
+- [Deutsche](https://www.nexusmods.com/stardewvalley/mods/53245) - Neko41
 
 <a id="patchnotes"></a>
 
