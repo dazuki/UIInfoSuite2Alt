@@ -32,6 +32,15 @@ public static class Tools
   public static readonly Color TooltipBuffBlue = new(25, 186, 227);
   #endregion
 
+  // Shortest vanilla buff is 1s. Shorter ones are kept alive by mods reapplying them.
+  private const int SustainedBuffMaxMs = 1000;
+
+  public static bool IsSustainedBuff(Buff buff)
+  {
+    return buff.millisecondsDuration != Buff.ENDLESS
+      && buff.totalMillisecondsDuration < SustainedBuffMaxMs;
+  }
+
   public static int GetWidthInPlayArea()
   {
     if (Game1.isOutdoorMapSmallerThanViewport())

@@ -83,8 +83,7 @@ internal class ShowBuffTimers : IDisposable
     _previousBuffIds.Value.Clear();
     foreach (KeyValuePair<string, Buff> pair in Game1.player.buffs.AppliedBuffs)
     {
-      // Only track non-permanent buffs
-      if (pair.Value.millisecondsDuration != -2)
+      if (HasTimer(pair.Value))
       {
         _previousBuffIds.Value.Add(pair.Key);
       }
@@ -122,8 +121,7 @@ internal class ShowBuffTimers : IDisposable
     {
       Buff buff = pair.Value;
 
-      // Skip permanent buffs (duration -2)
-      if (buff.millisecondsDuration == -2)
+      if (!HasTimer(buff))
       {
         continue;
       }
@@ -244,6 +242,12 @@ internal class ShowBuffTimers : IDisposable
     const int secondDigits = 2;
 
     return (DigitCount(minutes) + secondDigits) * digitStep + colonStep;
+  }
+
+  /// <summary>False for endless and sustained buffs.</summary>
+  private static bool HasTimer(Buff buff)
+  {
+    return buff.millisecondsDuration != Buff.ENDLESS && !Tools.IsSustainedBuff(buff);
   }
 
   private static int DigitCount(int n)

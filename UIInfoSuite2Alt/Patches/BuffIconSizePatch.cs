@@ -7,13 +7,14 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Buffs;
 using StardewValley.Menus;
+using UIInfoSuite2Alt.Infrastructure;
 
 namespace UIInfoSuite2Alt.Patches;
 
 /// <summary>
 /// Resizes and re-packs the vanilla buff icon display, or hides it entirely.
 /// Smaller mode shrinks each icon to half size and tightens the grid; Hidden mode
-/// suppresses the whole buff display draw.
+/// suppresses the whole buff display draw. Also keeps sustained buff icons static.
 /// </summary>
 internal static class BuffIconSizePatch
 {
@@ -78,9 +79,23 @@ internal static class BuffIconSizePatch
     }
   }
 
-  private static bool BeforeDraw()
+  private static bool BeforeDraw(Dictionary<ClickableTextureComponent, Buff> ___buffs)
   {
-    return Mode != ModeHidden;
+    if (Mode == ModeHidden)
+    {
+      return false;
+    }
+
+    // Sustained buffs would otherwise keep the expiry flash forever (the timer is never reset).
+    foreach (Buff buff in ___buffs.Values)
+    {
+      if (Tools.IsSustainedBuff(buff))
+      {
+        buff.displayAlphaTimer = 0f;
+      }
+    }
+
+    return true;
   }
 
   private static void AfterResetIcons(
@@ -88,8 +103,22 @@ internal static class BuffIconSizePatch
     Dictionary<ClickableTextureComponent, Buff> ___buffs
   )
   {
-    if (Mode != ModeSmaller || ___buffs == null || ___buffs.Count == 0)
+    if (___buffs == null || ___buffs.Count == 0)
     {
+      return;
+    }
+
+    if (Mode != ModeSmaller)
+    {
+      // Skip the "updated" pop, which sustained buffs trigger on every reapply.
+      foreach ((ClickableTextureComponent icon, Buff buff) in ___buffs)
+      {
+        if (Tools.IsSustainedBuff(buff))
+        {
+          icon.scale = icon.baseScale;
+        }
+      }
+
       return;
     }
 
