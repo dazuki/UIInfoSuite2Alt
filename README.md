@@ -103,6 +103,7 @@
 
 - **v2.9.2**
   - Buffs that mods keep alive by constantly reapplying them no longer show a stuck "0:00" timer, pulse/flash their icon, or play the buff expired sound
+  - Fixed experience bar colors ([#5](https://github.com/dazuki/UIInfoSuite2Alt/pull/5)) [@Class0806](https://github.com/Class0806)
 - **v2.9.1**
   - Content Patcher mods can now give their own custom placed objects an effect range overlay ([documentation](docs/custom-item-effect-ranges.md))
   - Settings are now backed up outside the Mods folder (in SMAPI's mod-data folder) and restored automatically if `config.json` goes missing, so they survive a clean reinstall
