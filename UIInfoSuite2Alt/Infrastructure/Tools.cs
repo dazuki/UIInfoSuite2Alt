@@ -168,9 +168,38 @@ public static class Tools
     }
   }
 
+  // Seed QualifiedItemId to harvest item (null if none); price is still read live
+  private static readonly Dictionary<string, SObject?> _harvestCache = new();
+
+  private static readonly string[] HarvestDataAssets =
+  [
+    "Data/Objects",
+    "Data/Crops",
+    "Data/FruitTrees",
+  ];
+
   public static int GetHarvestPrice(Item item)
   {
-    return GetHarvest(item)?.sellToStorePrice() ?? 0;
+    if (!_harvestCache.TryGetValue(item.QualifiedItemId, out SObject? harvest))
+    {
+      harvest = GetHarvest(item);
+      _harvestCache[item.QualifiedItemId] = harvest;
+    }
+
+    return harvest?.sellToStorePrice() ?? 0;
+  }
+
+  public static void ClearHarvestCache()
+  {
+    _harvestCache.Clear();
+  }
+
+  public static void ClearHarvestCacheIfAffected(IEnumerable<IAssetName> invalidatedAssets)
+  {
+    if (invalidatedAssets.Any(name => HarvestDataAssets.Any(asset => name.IsEquivalentTo(asset))))
+    {
+      _harvestCache.Clear();
+    }
   }
 
   public static void DrawMouseCursor()

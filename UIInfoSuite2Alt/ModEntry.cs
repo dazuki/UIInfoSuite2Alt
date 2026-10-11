@@ -196,6 +196,8 @@ public partial class ModEntry : Mod
     DebugCommandHandler.Register(helper, Monitor, ModManifest, ResetConfigToDefaults);
 
     helper.Events.Content.AssetRequested += OnAssetRequested;
+    helper.Events.Content.AssetsInvalidated += (_, e) =>
+      Tools.ClearHarvestCacheIfAffected(e.NamesWithoutLocale);
     helper.Events.GameLoop.ReturnedToTitle += OnReturnedToTitle;
     helper.Events.GameLoop.DayStarted += OnDayStarted;
     helper.Events.GameLoop.GameLaunched += OnGameLaunched;
@@ -306,6 +308,7 @@ public partial class ModEntry : Mod
     ModConfig = LoadConfig();
     BundleHelper.ClearCaches();
     UnlockableBundleHelper.ClearCache();
+    Tools.ClearHarvestCache();
     ApplyFeatures();
   }
 
