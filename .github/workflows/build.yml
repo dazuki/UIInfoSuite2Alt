@@ -16,7 +16,7 @@ jobs:
       RELEASE_REF: refs/heads/release # pushes to this branch are treated as public releases
     steps:
       - name: Fetch code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-tags: false
 
