@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Menus;
 using StardewValley.Quests;
@@ -31,6 +32,9 @@ internal class ShowQuestLastDayReminder : IDisposable
   private const int StackGap = 6;
 
   private static readonly int ClockSize = (int)(ClockSourceRect.Width * ClockScale);
+
+  private static readonly PerScreen<int> _cachedLastDayCount = new();
+  private static readonly PerScreen<int> _lastDayCountTick = new(() => int.MinValue);
 
   private readonly IModHelper _helper;
   private static bool _enabled;
@@ -229,8 +233,14 @@ internal class ShowQuestLastDayReminder : IDisposable
   // removed when <= 0; special orders are removed at newDay when GetDaysLeft() <= 0.
   private static int GetLastDayQuestCount()
   {
-    return Game1.player.questLog.Count(IsLastDayQuest)
-      + Game1.player.team.specialOrders.Count(IsLastDayOrder);
+    if (ShowQuestCount.IsCountStale(_lastDayCountTick))
+    {
+      _cachedLastDayCount.Value =
+        Game1.player.questLog.Count(IsLastDayQuest)
+        + Game1.player.team.specialOrders.Count(IsLastDayOrder);
+    }
+
+    return _cachedLastDayCount.Value;
   }
 
   private static List<string> GetLastDayQuestNames()

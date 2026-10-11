@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewModdingAPI.Utilities;
 using StardewValley;
 using UIInfoSuite2Alt.Infrastructure;
 
@@ -22,6 +23,12 @@ internal class ShowQuestCount : IDisposable
   private const int SideRaise = 14;
 
   private static readonly Rectangle BgSourceRect = new(432, 439, 9, 9);
+
+  // Counts are read several times per frame
+  private const int CountRefreshTicks = 15;
+  private static readonly PerScreen<int> _cachedQuestCount = new();
+  private static readonly PerScreen<int> _questCountTick = new(() => int.MinValue);
+
   private readonly IModHelper _helper;
   #endregion
 
@@ -110,8 +117,28 @@ internal class ShowQuestCount : IDisposable
   #region Logic
   private static int GetVisibleQuestCount()
   {
-    return Game1.player.questLog.Count(q => q != null && !q.IsHidden())
-      + Game1.player.team.specialOrders.Count(so => !so.IsHidden());
+    if (IsCountStale(_questCountTick))
+    {
+      _cachedQuestCount.Value =
+        Game1.player.questLog.Count(q => q != null && !q.IsHidden())
+        + Game1.player.team.specialOrders.Count(so => !so.IsHidden());
+    }
+
+    return _cachedQuestCount.Value;
+  }
+
+  /// <summary>True if due a refresh; also stamps the current tick.</summary>
+  internal static bool IsCountStale(PerScreen<int> lastTick)
+  {
+    // Negative: tick counter was reset
+    long elapsed = (long)Game1.ticks - lastTick.Value;
+    if (elapsed >= 0 && elapsed < CountRefreshTicks)
+    {
+      return false;
+    }
+
+    lastTick.Value = Game1.ticks;
+    return true;
   }
 
   /// <summary>Whether the badge is on screen right now.</summary>
