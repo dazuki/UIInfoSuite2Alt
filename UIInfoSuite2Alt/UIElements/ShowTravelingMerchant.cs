@@ -27,7 +27,7 @@ public class ShowTravelingMerchant : IDisposable
   private readonly List<string> _bundleItemNames = [];
   private bool _merchantHasUbBundleItems;
   private readonly List<string> _ubBundleItemNames = [];
-  private ClickableTextureComponent _travelingMerchantIcon = null!;
+  private ClickableTextureComponent? _travelingMerchantIcon;
   private Texture2D _merchantTexture = null!;
   private int _bundlePulseTimer;
   private int _bundlePulseDelay;
@@ -206,14 +206,16 @@ public class ShowTravelingMerchant : IDisposable
             && (!_rsvMerchantIsVisited || !HideWhenVisited)
             && (!_travelingMerchantIsHere || _travelingMerchantIsVisited);
           Texture2D iconTexture = useRsvIcon ? GetRsvIconTexture() : _merchantTexture;
-          var iconSource = new Rectangle(0, 0, _merchantTexture.Width, _merchantTexture.Height);
 
-          _travelingMerchantIcon = new ClickableTextureComponent(
-            new Rectangle(pos.X, pos.Y, 40, 40),
-            iconTexture,
-            iconSource,
+          _travelingMerchantIcon ??= new ClickableTextureComponent(
+            new Rectangle(0, 0, 40, 40),
+            _merchantTexture,
+            new Rectangle(0, 0, _merchantTexture.Width, _merchantTexture.Height),
             2f
           );
+          _travelingMerchantIcon.bounds.X = pos.X;
+          _travelingMerchantIcon.bounds.Y = pos.Y;
+          _travelingMerchantIcon.texture = iconTexture;
           _travelingMerchantIcon.draw(batch);
 
           if ((_merchantHasBundleItems || _merchantHasUbBundleItems) && ShowBundleIcon)

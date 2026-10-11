@@ -130,6 +130,7 @@ internal class ShowRainyDayIcon : IDisposable
       (batch, pos) =>
       {
         var bounds = new Rectangle(pos.X, pos.Y, 40, 40);
+        Rectangle sourceRect = weather.SpriteLocation.Value;
 
         if (weather.CustomTextureAsset != null)
         {
@@ -141,23 +142,12 @@ internal class ShowRainyDayIcon : IDisposable
 
           batch.Draw(_weatherBorderTexture, bounds, Color.White);
           var iconRect = new Rectangle(bounds.X + 3, bounds.Y + 3, 34, 34);
-          batch.Draw(customTexture, iconRect, weather.SpriteLocation.Value, Color.White);
-          weather.IconComponent = new ClickableTextureComponent(
-            bounds,
-            customTexture,
-            weather.SpriteLocation.Value,
-            1f
-          );
+          batch.Draw(customTexture, iconRect, sourceRect, Color.White);
+          UpdateIconComponent(weather, bounds, customTexture, sourceRect, 1f);
         }
         else
         {
-          weather.IconComponent = new ClickableTextureComponent(
-            bounds,
-            _iconSheet,
-            weather.SpriteLocation.Value,
-            8 / 3f
-          );
-          weather.IconComponent.draw(batch);
+          UpdateIconComponent(weather, bounds, _iconSheet, sourceRect, 8 / 3f).draw(batch);
         }
       },
       batch =>
@@ -170,6 +160,28 @@ internal class ShowRainyDayIcon : IDisposable
         }
       }
     );
+  }
+
+  private static ClickableTextureComponent UpdateIconComponent(
+    LocationWeather weather,
+    Rectangle bounds,
+    Texture2D texture,
+    Rectangle sourceRect,
+    float scale
+  )
+  {
+    ClickableTextureComponent icon = weather.IconComponent ??= new ClickableTextureComponent(
+      bounds,
+      texture,
+      sourceRect,
+      scale
+    );
+    icon.bounds = bounds;
+    icon.texture = texture;
+    icon.sourceRect = sourceRect;
+    icon.scale = scale;
+    icon.baseScale = scale;
+    return icon;
   }
   #endregion
 

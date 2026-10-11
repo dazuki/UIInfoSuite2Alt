@@ -14,7 +14,14 @@ public class ShowBookseller : IDisposable
   #region Properties
   private bool _booksellerIsHere;
   private readonly PerScreen<bool> _booksellerIsVisited = new();
-  private readonly PerScreen<ClickableTextureComponent> _booksellerIcon = new();
+  private readonly PerScreen<ClickableTextureComponent> _booksellerIcon = new(() =>
+    new ClickableTextureComponent(
+      new Rectangle(0, 0, 40, 40),
+      Game1.mouseCursors_1_6,
+      new Rectangle(52, 477, 20, 20),
+      2f
+    )
+  );
 
   private bool Enabled { get; set; }
   private bool HideWhenVisited { get; set; }
@@ -81,13 +88,11 @@ public class ShowBookseller : IDisposable
         "Bookseller",
         (batch, pos) =>
         {
-          _booksellerIcon.Value = new ClickableTextureComponent(
-            new Rectangle(pos.X, pos.Y, 40, 40),
-            Game1.mouseCursors_1_6,
-            new Rectangle(52, 477, 20, 20),
-            2f
-          );
-          _booksellerIcon.Value.draw(batch);
+          ClickableTextureComponent icon = _booksellerIcon.Value;
+          icon.bounds.X = pos.X;
+          icon.bounds.Y = pos.Y;
+          icon.texture = Game1.mouseCursors_1_6;
+          icon.draw(batch);
         },
         batch =>
         {
