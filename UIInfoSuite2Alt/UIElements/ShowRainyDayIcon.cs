@@ -22,11 +22,15 @@ internal class ShowRainyDayIcon : IDisposable
     internal Rectangle? SpriteLocation { get; set; }
     internal string HoverText { get; set; } = "";
     internal ClickableTextureComponent? IconComponent { get; set; }
-    internal Texture2D? CustomTexture { get; set; }
+
+    // Texture is loaded per draw; a cached one goes stale on content reload
+    internal string? CustomTextureAsset { get; set; }
   }
 
   private readonly LocationWeather _valleyWeather = new();
   private readonly LocationWeather _islandWeather = new();
+  private bool _hasVisitedIsland;
+  private bool _refreshPending = true;
   private Texture2D _iconSheet = null!;
 
   private Color[] _weatherIconColors = null!;
@@ -65,19 +69,40 @@ internal class ShowRainyDayIcon : IDisposable
   public void ToggleOption(bool showRainyDay)
   {
     _helper.Events.Display.RenderingHud -= OnRenderingHud;
+    _helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
+    _helper.Events.GameLoop.DayStarted -= OnDayStarted;
 
     if (showRainyDay)
     {
+      _refreshPending = true;
       _helper.Events.Display.RenderingHud += OnRenderingHud;
+      _helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+      _helper.Events.GameLoop.DayStarted += OnDayStarted;
     }
   }
   #endregion
 
   #region Event subscriptions
+  private void OnDayStarted(object? sender, DayStartedEventArgs e)
+  {
+    // Deferred: weather lookups load content
+    _refreshPending = true;
+  }
+
+  // Polled: a Rain Totem can change tomorrow's weather mid-day
+  private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
+  {
+    if ((!_refreshPending && !e.IsOneSecond) || !Context.IsWorldReady)
+    {
+      return;
+    }
+
+    _refreshPending = false;
+    RefreshWeather();
+  }
+
   private void OnRenderingHud(object? sender, RenderingHudEventArgs e)
   {
-    GetWeatherIconSpriteLocation();
-
     if (
       !UIElementUtils.IsRenderingNormally()
       || (_requireTv && !TvChannelWatcher.HasWatchedWeather.Value)
@@ -87,7 +112,7 @@ internal class ShowRainyDayIcon : IDisposable
     }
 
     EnqueueWeatherIcon(_valleyWeather);
-    if (HasVisitedIsland())
+    if (_hasVisitedIsland)
     {
       EnqueueWeatherIcon(_islandWeather);
     }
@@ -106,14 +131,20 @@ internal class ShowRainyDayIcon : IDisposable
       {
         var bounds = new Rectangle(pos.X, pos.Y, 40, 40);
 
-        if (weather.CustomTexture != null)
+        if (weather.CustomTextureAsset != null)
         {
+          Texture2D? customTexture = TryLoadCustomTexture(weather.CustomTextureAsset);
+          if (customTexture == null)
+          {
+            return;
+          }
+
           batch.Draw(_weatherBorderTexture, bounds, Color.White);
           var iconRect = new Rectangle(bounds.X + 3, bounds.Y + 3, 34, 34);
-          batch.Draw(weather.CustomTexture, iconRect, weather.SpriteLocation.Value, Color.White);
+          batch.Draw(customTexture, iconRect, weather.SpriteLocation.Value, Color.White);
           weather.IconComponent = new ClickableTextureComponent(
             bounds,
-            weather.CustomTexture,
+            customTexture,
             weather.SpriteLocation.Value,
             1f
           );
@@ -300,24 +331,28 @@ internal class ShowRainyDayIcon : IDisposable
     _iconSheet.SetData(_weatherIconColors);
   }
 
-  private void GetWeatherIconSpriteLocation()
+  private void RefreshWeather()
   {
-    SetValleyWeatherSprite();
-    if (HasVisitedIsland())
+    string valleyWeatherId = GetWeatherForTomorrow();
+    SetValleyWeatherSprite(valleyWeatherId);
+
+    _hasVisitedIsland = HasVisitedIsland();
+    string? islandWeatherId = null;
+    if (_hasVisitedIsland)
     {
-      SetIslandWeatherSprite();
+      islandWeatherId = GetIslandWeatherForTomorrow();
+      SetIslandWeatherSprite(islandWeatherId);
     }
 
     ModEntry.MonitorObject.LogOnce(
-      $"ShowRainyDayIcon: tomorrow's weather, valley={GetWeatherForTomorrow()}, island={(HasVisitedIsland() ? GetIslandWeatherForTomorrow() : "n/a")}",
+      $"ShowRainyDayIcon: tomorrow's weather, valley={valleyWeatherId}, island={islandWeatherId ?? "n/a"}",
       LogLevel.Trace
     );
   }
 
-  private void SetValleyWeatherSprite()
+  private void SetValleyWeatherSprite(string weatherId)
   {
-    string weatherId = GetWeatherForTomorrow();
-    _valleyWeather.CustomTexture = null;
+    _valleyWeather.CustomTextureAsset = null;
 
     switch (weatherId)
     {
@@ -358,10 +393,9 @@ internal class ShowRainyDayIcon : IDisposable
     }
   }
 
-  private void SetIslandWeatherSprite()
+  private void SetIslandWeatherSprite(string weatherId)
   {
-    string weatherId = GetIslandWeatherForTomorrow();
-    _islandWeather.CustomTexture = null;
+    _islandWeather.CustomTextureAsset = null;
 
     switch (weatherId)
     {
@@ -404,25 +438,32 @@ internal class ShowRainyDayIcon : IDisposable
       return;
     }
 
-    Texture2D? texture;
-    try
+    if (TryLoadCustomTexture(data.IconTexture) == null)
     {
-      texture = _helper.GameContent.Load<Texture2D>(data.IconTexture);
-    }
-    catch (Exception ex)
-    {
-      ModEntry.MonitorObject.Log(
-        $"ShowRainyDayIcon: failed to load weather texture '{data.IconTexture}', weatherId={weatherId}, {ex.Message}",
-        LogLevel.Warn
-      );
       weather.IsRainyTomorrow = false;
       return;
     }
 
     weather.IsRainyTomorrow = true;
-    weather.CustomTexture = texture;
+    weather.CustomTextureAsset = data.IconTexture;
     weather.SpriteLocation = new Rectangle(data.IconSource.X, data.IconSource.Y, 12, 8);
     weather.HoverText = I18n.CustomWeatherNextDay(weatherName: data.DisplayName);
+  }
+
+  private Texture2D? TryLoadCustomTexture(string assetName)
+  {
+    try
+    {
+      return _helper.GameContent.Load<Texture2D>(assetName);
+    }
+    catch (Exception ex)
+    {
+      ModEntry.MonitorObject.LogOnce(
+        $"ShowRainyDayIcon: failed to load weather texture '{assetName}', {ex.Message}",
+        LogLevel.Warn
+      );
+      return null;
+    }
   }
   #endregion
 }
