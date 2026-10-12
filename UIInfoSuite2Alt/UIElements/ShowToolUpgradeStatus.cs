@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
@@ -8,6 +9,7 @@ using StardewValley;
 using StardewValley.ItemTypeDefinitions;
 using StardewValley.Menus;
 using StardewValley.Tools;
+using UIInfoSuite2Alt.Compatibility;
 using UIInfoSuite2Alt.Infrastructure;
 
 namespace UIInfoSuite2Alt.UIElements;
@@ -17,6 +19,8 @@ internal class ShowToolUpgradeStatus : IDisposable
   #region Logic
   private void UpdateToolInfo()
   {
+    UpdateExtraUpgrades();
+
     Tool toolBeingUpgraded = _toolBeingUpgraded.Value = Game1.player.toolBeingUpgraded.Value;
 
     if (toolBeingUpgraded == null)
@@ -54,11 +58,61 @@ internal class ShowToolUpgradeStatus : IDisposable
       );
     }
   }
+
+  private void UpdateExtraUpgrades()
+  {
+    _extraUpgrades.Value.Clear();
+
+    if (!ApiManager.GetApi(ModCompat.FlexibleUpgrades, out IFlexibleUpgradesApi? api))
+    {
+      return;
+    }
+
+    foreach (var order in api.GetToolOrders())
+    {
+      if (order.IsVanilla)
+      {
+        continue;
+      }
+
+      string hoverText =
+        order.DaysLeft > 0
+          ? string.Format(I18n.DaysUntilToolIsUpgraded(), order.DaysLeft, order.DisplayName)
+          : string.Format(I18n.ToolIsFinishedBeingUpgraded(), order.DisplayName);
+      _extraUpgrades.Value.Add(
+        new ExtraUpgrade(ResolveExtraIcon(order.QualifiedItemId), hoverText)
+      );
+    }
+  }
+
+  private static ClickableTextureComponent ResolveExtraIcon(string qualifiedItemId)
+  {
+    if (string.IsNullOrEmpty(qualifiedItemId))
+    {
+      return new ClickableTextureComponent(
+        new Rectangle(0, 0, 40, 40),
+        Game1.mouseCursors,
+        new Rectangle(322, 498, 12, 12),
+        40 / 12f
+      );
+    }
+
+    ParsedItemData itemData = ItemRegistry.GetDataOrErrorItem(qualifiedItemId);
+    Texture2D itemTexture = itemData.GetTexture();
+    Rectangle itemTextureLocation = itemData.GetSourceRect();
+    return new ClickableTextureComponent(
+      new Rectangle(0, 0, 40, 40),
+      itemTexture,
+      itemTextureLocation,
+      40.0f / itemTextureLocation.Width
+    );
+  }
   #endregion
 
   #region Properties
   private readonly PerScreen<string> _hoverText = new();
   private readonly PerScreen<Tool?> _toolBeingUpgraded = new();
+  private readonly PerScreen<List<ExtraUpgrade>> _extraUpgrades = new(() => []);
 
   private readonly PerScreen<ClickableTextureComponent> _toolUpgradeIcon = new(() =>
   {
@@ -71,6 +125,8 @@ internal class ShowToolUpgradeStatus : IDisposable
   });
 
   private readonly IModHelper _helper;
+
+  private readonly record struct ExtraUpgrade(ClickableTextureComponent Icon, string HoverText);
   #endregion
 
 
@@ -84,6 +140,7 @@ internal class ShowToolUpgradeStatus : IDisposable
   {
     ToggleOption(false);
     _toolBeingUpgraded.Value = null;
+    _extraUpgrades.Value.Clear();
   }
 
   public void ToggleOption(bool showToolUpgradeStatus)
@@ -106,9 +163,18 @@ internal class ShowToolUpgradeStatus : IDisposable
   #region Event subscriptions
   private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
   {
-    if (e.IsOneSecond && _toolBeingUpgraded.Value != Game1.player.toolBeingUpgraded.Value)
+    if (!e.IsOneSecond)
+    {
+      return;
+    }
+
+    if (_toolBeingUpgraded.Value != Game1.player.toolBeingUpgraded.Value)
     {
       UpdateToolInfo();
+    }
+    else
+    {
+      UpdateExtraUpgrades();
     }
   }
 
@@ -119,24 +185,37 @@ internal class ShowToolUpgradeStatus : IDisposable
 
   private void OnRenderingHud(object? sender, RenderingHudEventArgs e)
   {
-    if (!UIElementUtils.IsRenderingNormally() || _toolBeingUpgraded.Value == null)
+    if (!UIElementUtils.IsRenderingNormally())
     {
       return;
     }
 
+    if (_toolBeingUpgraded.Value != null)
+    {
+      EnqueueUpgradeIcon(_toolUpgradeIcon.Value, _hoverText.Value);
+    }
+
+    foreach (ExtraUpgrade extra in _extraUpgrades.Value)
+    {
+      EnqueueUpgradeIcon(extra.Icon, extra.HoverText);
+    }
+  }
+
+  private static void EnqueueUpgradeIcon(ClickableTextureComponent icon, string hoverText)
+  {
     IconHandler.Handler.EnqueueIcon(
       "ToolUpgrade",
       (batch, pos) =>
       {
-        _toolUpgradeIcon.Value.bounds.X = pos.X;
-        _toolUpgradeIcon.Value.bounds.Y = pos.Y;
-        _toolUpgradeIcon.Value.draw(batch);
+        icon.bounds.X = pos.X;
+        icon.bounds.Y = pos.Y;
+        icon.draw(batch);
       },
       batch =>
       {
-        if (AndroidHud.IsHovered(_toolUpgradeIcon.Value))
+        if (AndroidHud.IsHovered(icon))
         {
-          IClickableMenu.drawHoverText(batch, _hoverText.Value, Game1.smallFont);
+          IClickableMenu.drawHoverText(batch, hoverText, Game1.smallFont);
         }
       }
     );

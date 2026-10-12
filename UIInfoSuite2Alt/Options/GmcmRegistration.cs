@@ -28,6 +28,7 @@ public partial class ModEntry
     ApiManager.TryRegisterApi<IBetterJunimosApi>(Helper, ModCompat.BetterJunimos);
     ApiManager.TryRegisterApi<IWalkOfLifeApi>(Helper, ModCompat.WalkOfLife);
     ApiManager.TryRegisterApi<IExtraMachineConfigApi>(Helper, ModCompat.ExtraMachineConfig);
+    ApiManager.TryRegisterApi<IFlexibleUpgradesApi>(Helper, ModCompat.FlexibleUpgrades, "1.0.2");
 
     WalkOfLifeHelper.Initialize(Helper);
     FerngillEconomyHelper.Initialize(Helper);

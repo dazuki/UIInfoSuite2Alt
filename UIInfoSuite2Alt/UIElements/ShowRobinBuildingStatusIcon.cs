@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
@@ -47,6 +48,14 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
       BuildingStatusText = buildingStatusText;
     }
   }
+
+  private sealed class FlexibleProject
+  {
+    public string Kind = "";
+    public Texture2D? IconSheet;
+    public string HoverText = "";
+    public ClickableTextureComponent? Icon;
+  }
   #endregion
 
   #region Properties
@@ -56,6 +65,7 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
   private static readonly Rectangle ApprenticeHeadRect = new(48, 36, 13, 14);
 
   private readonly List<BuilderStatus> _builders = new();
+  private readonly PerScreen<List<FlexibleProject>> _flexibleProjects = new(() => []);
   private readonly IModHelper _helper;
   #endregion
 
@@ -113,6 +123,7 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
   public void Dispose()
   {
     ToggleOption(false);
+    _flexibleProjects.Value.Clear();
   }
 
   public void ToggleOption(bool showRobinBuildingStatus)
@@ -145,6 +156,7 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
   {
     if (Game1.currentLocation?.Name != "ScienceHouse")
     {
+      UpdateFlexibleProjects();
       return;
     }
 
@@ -192,14 +204,53 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
         }
       );
     }
+
+    foreach (FlexibleProject project in _flexibleProjects.Value)
+    {
+      if (project.IconSheet is null)
+      {
+        continue;
+      }
+
+      IconHandler.Handler.EnqueueIcon(
+        "RobinBuilding",
+        (batch, pos) =>
+        {
+          project.Icon = new ClickableTextureComponent(
+            new Rectangle(pos.X, pos.Y, 40, 40),
+            project.IconSheet,
+            RobinHeadRect,
+            8 / 3f
+          );
+          project.Icon.draw(batch);
+        },
+        batch =>
+        {
+          if (AndroidHud.IsHovered(project.Icon))
+          {
+            IClickableMenu.drawHoverText(batch, project.HoverText, Game1.smallFont);
+          }
+        }
+      );
+    }
   }
   #endregion
 
   #region Logic
   private void UpdateBuildingStatusData()
   {
+    UpdateFlexibleProjects();
+
+    bool flexibleBuildings = _flexibleProjects.Value.Any(project => project.Kind != "Community");
+
     foreach (BuilderStatus builder in _builders)
     {
+      if (builder.IsRobin && flexibleBuildings)
+      {
+        builder.InProgress = false;
+        continue;
+      }
+
       if (GetBuilderMessage(builder, out builder.HoverText))
       {
         builder.InProgress = true;
@@ -210,6 +261,53 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
         builder.InProgress = false;
       }
     }
+  }
+
+  private void UpdateFlexibleProjects()
+  {
+    _flexibleProjects.Value.Clear();
+
+    if (!ApiManager.GetApi(ModCompat.FlexibleUpgrades, out IFlexibleUpgradesApi? api))
+    {
+      return;
+    }
+
+    Texture2D? robinSheet = ResolveRobinSheet();
+    if (robinSheet is null)
+    {
+      return;
+    }
+
+    foreach (var project in api.GetRobinProjects())
+    {
+      if (project.Kind == "House")
+      {
+        continue;
+      }
+
+      _flexibleProjects.Value.Add(
+        new FlexibleProject
+        {
+          Kind = project.Kind,
+          IconSheet = robinSheet,
+          HoverText = string.Format(I18n.FlexibleBuildingStatus(), project.Name, project.DaysLeft),
+        }
+      );
+    }
+  }
+
+  private static Texture2D? ResolveRobinSheet()
+  {
+    Texture2D? robinTexture = Game1.getCharacterFromName("Robin")?.Sprite?.Texture;
+    if (robinTexture == null)
+    {
+      ModEntry.MonitorObject.Log(
+        "ShowRobinBuildingStatusIcon: Robin spritesheet not found",
+        LogLevel.Warn
+      );
+    }
+
+    return robinTexture;
   }
 
   private static bool GetBuilderMessage(BuilderStatus builder, out string hoverText)
@@ -240,19 +338,7 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
   {
     if (builder.IsRobin)
     {
-      Texture2D? robinTexture = Game1.getCharacterFromName("Robin")?.Sprite?.Texture;
-      if (robinTexture != null)
-      {
-        builder.IconSheet = robinTexture;
-      }
-      else
-      {
-        ModEntry.MonitorObject.Log(
-          "ShowRobinBuildingStatusIcon: Robin spritesheet not found",
-          LogLevel.Warn
-        );
-      }
-
+      builder.IconSheet = ResolveRobinSheet();
       return;
     }
 
