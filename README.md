@@ -503,6 +503,7 @@ The compatability ranges from small fixes to bigger integration with mod provide
 - [Chests Anywhere](https://www.nexusmods.com/stardewvalley/mods/518)
 - [One Click Shed Reloader](https://www.nexusmods.com/stardewvalley/mods/2052)
 - [Better Shipping Bin](https://www.nexusmods.com/stardewvalley/mods/10487)
+- [Flexible Upgrades](https://www.nexusmods.com/stardewvalley/mods/53846)
 
 <p align="center">
   <a href="https://ko-fi.com/dazuki89" target="_BLANK">
