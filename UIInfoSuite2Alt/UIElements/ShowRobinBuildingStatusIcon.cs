@@ -245,7 +245,7 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
 
     foreach (BuilderStatus builder in _builders)
     {
-      if (builder.IsRobin && flexibleBuildings)
+      if (builder.IsRobin && flexibleBuildings && Game1.player.daysUntilHouseUpgrade.Value <= 0)
       {
         builder.InProgress = false;
         continue;
