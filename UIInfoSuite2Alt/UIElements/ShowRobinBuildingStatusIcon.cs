@@ -20,7 +20,6 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
   private sealed class BuilderStatus
   {
     public readonly string BuilderName;
-    public readonly string IconKey;
     public readonly bool IsRobin;
     public readonly string? SpriteAsset;
     public readonly Rectangle HeadRect;
@@ -33,7 +32,6 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
 
     public BuilderStatus(
       string builderName,
-      string iconKey,
       bool isRobin,
       string? spriteAsset,
       Rectangle headRect,
@@ -41,7 +39,6 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
     )
     {
       BuilderName = builderName;
-      IconKey = iconKey;
       IsRobin = isRobin;
       SpriteAsset = spriteAsset;
       HeadRect = headRect;
@@ -59,6 +56,8 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
   #endregion
 
   #region Properties
+  private const string IconKey = "RobinBuilding";
+
   // 1px edits for better alignment with other icons
   private static readonly Rectangle RobinHeadRect = new(0, 196, 15, 14);
 
@@ -74,23 +73,13 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
   {
     _helper = helper;
 
-    _builders.Add(
-      new BuilderStatus(
-        "Robin",
-        "RobinBuilding",
-        true,
-        null,
-        RobinHeadRect,
-        I18n.RobinBuildingStatus
-      )
-    );
+    _builders.Add(new BuilderStatus("Robin", true, null, RobinHeadRect, I18n.RobinBuildingStatus));
 
     if (helper.ModRegistry.IsLoaded(ModCompat.CarpentersApprentice))
     {
       _builders.Add(
         new BuilderStatus(
           "RobinApprentice",
-          "RobinApprenticeBuilding",
           false,
           "CarpentersApprentice/RobinApprenticeSprite",
           ApprenticeHeadRect,
@@ -100,7 +89,6 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
       _builders.Add(
         new BuilderStatus(
           "RobinApprentice2",
-          "RobinApprentice2Building",
           false,
           "CarpentersApprentice/RobinApprentice2Sprite",
           ApprenticeHeadRect,
@@ -110,7 +98,6 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
       _builders.Add(
         new BuilderStatus(
           "RobinApprentice3",
-          "RobinApprentice3Building",
           false,
           "CarpentersApprentice/RobinApprentice3Sprite",
           ApprenticeHeadRect,
@@ -177,32 +164,10 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
 
     foreach (BuilderStatus builder in _builders)
     {
-      if (!builder.InProgress || builder.IconSheet is null)
+      if (builder.IsRobin)
       {
-        continue;
+        EnqueueBuilderIcon(builder);
       }
-
-      BuilderStatus current = builder;
-      IconHandler.Handler.EnqueueIcon(
-        current.IconKey,
-        (batch, pos) =>
-        {
-          current.Icon.Value = new ClickableTextureComponent(
-            new Rectangle(pos.X, pos.Y, 40, 40),
-            current.IconSheet,
-            current.HeadRect,
-            8 / 3f
-          );
-          current.Icon.Value.draw(batch);
-        },
-        batch =>
-        {
-          if (AndroidHud.IsHovered(current.Icon.Value) && !string.IsNullOrEmpty(current.HoverText))
-          {
-            IClickableMenu.drawHoverText(batch, current.HoverText, Game1.smallFont);
-          }
-        }
-      );
     }
 
     foreach (FlexibleProject project in _flexibleProjects.Value)
@@ -213,7 +178,7 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
       }
 
       IconHandler.Handler.EnqueueIcon(
-        "RobinBuilding",
+        IconKey,
         (batch, pos) =>
         {
           project.Icon = new ClickableTextureComponent(
@@ -233,6 +198,43 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
         }
       );
     }
+
+    foreach (BuilderStatus builder in _builders)
+    {
+      if (!builder.IsRobin)
+      {
+        EnqueueBuilderIcon(builder);
+      }
+    }
+  }
+
+  private static void EnqueueBuilderIcon(BuilderStatus builder)
+  {
+    if (!builder.InProgress || builder.IconSheet is null)
+    {
+      return;
+    }
+
+    IconHandler.Handler.EnqueueIcon(
+      IconKey,
+      (batch, pos) =>
+      {
+        builder.Icon.Value = new ClickableTextureComponent(
+          new Rectangle(pos.X, pos.Y, 40, 40),
+          builder.IconSheet,
+          builder.HeadRect,
+          8 / 3f
+        );
+        builder.Icon.Value.draw(batch);
+      },
+      batch =>
+      {
+        if (AndroidHud.IsHovered(builder.Icon.Value) && !string.IsNullOrEmpty(builder.HoverText))
+        {
+          IClickableMenu.drawHoverText(batch, builder.HoverText, Game1.smallFont);
+        }
+      }
+    );
   }
   #endregion
 
