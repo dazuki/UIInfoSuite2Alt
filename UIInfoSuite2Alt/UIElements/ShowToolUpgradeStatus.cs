@@ -68,20 +68,18 @@ internal class ShowToolUpgradeStatus : IDisposable
       return;
     }
 
-    foreach (var order in api.GetToolOrders())
+    foreach ((string name, int daysLeft, string itemId, bool isVanilla) in api.GetToolOrders())
     {
-      if (order.IsVanilla)
+      if (isVanilla)
       {
         continue;
       }
 
       string hoverText =
-        order.DaysLeft > 0
-          ? string.Format(I18n.DaysUntilToolIsUpgraded(), order.DaysLeft, order.DisplayName)
-          : string.Format(I18n.ToolIsFinishedBeingUpgraded(), order.DisplayName);
-      _extraUpgrades.Value.Add(
-        new ExtraUpgrade(ResolveExtraIcon(order.QualifiedItemId), hoverText)
-      );
+        daysLeft > 0
+          ? string.Format(I18n.DaysUntilToolIsUpgraded(), daysLeft, name)
+          : string.Format(I18n.ToolIsFinishedBeingUpgraded(), name);
+      _extraUpgrades.Value.Add(new ExtraUpgrade(ResolveExtraIcon(itemId), hoverText));
     }
   }
 

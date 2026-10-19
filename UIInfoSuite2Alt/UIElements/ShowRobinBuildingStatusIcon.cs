@@ -280,9 +280,9 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
       return;
     }
 
-    foreach (var project in api.GetRobinProjects())
+    foreach ((string kind, string name, int daysLeft, _) in api.GetRobinProjects())
     {
-      if (project.Kind == "House")
+      if (kind == "House")
       {
         continue;
       }
@@ -290,9 +290,9 @@ internal class ShowRobinBuildingStatusIcon : IDisposable
       _flexibleProjects.Value.Add(
         new FlexibleProject
         {
-          Kind = project.Kind,
+          Kind = kind,
           IconSheet = robinSheet,
-          HoverText = string.Format(I18n.FlexibleBuildingStatus(), project.Name, project.DaysLeft),
+          HoverText = string.Format(I18n.FlexibleBuildingStatus(), name, daysLeft),
         }
       );
     }
