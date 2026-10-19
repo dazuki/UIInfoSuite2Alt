@@ -102,8 +102,9 @@
 > Most new features can be toggled on/off in the mod's in-game options menu.
 
 - **v2.9.2**
-  - Added [Flexible Upgrades](https://www.nexusmods.com/stardewvalley/mods/53846) compatibility: an icon for each extra tool upgrade and Robin building project ([#7](https://github.com/dazuki/UIInfoSuite2Alt/pull/7)) [@yousv](https://github.com/yousv)
-  - Fixed washed-out experience bar colors ([#5](https://github.com/dazuki/UIInfoSuite2Alt/pull/5)) [@Class0806](https://github.com/Class0806)
+  - Added [Flexible Upgrades](https://www.nexusmods.com/stardewvalley/mods/53846) compatibility: [#7](https://github.com/dazuki/UIInfoSuite2Alt/pull/7) [@yousv](https://github.com/yousv)
+    - Icons for each extra tool upgrade and Robin building projects
+  - Fixed washed-out experience bar colors [#5](https://github.com/dazuki/UIInfoSuite2Alt/pull/5) [@Class0806](https://github.com/Class0806)
   - Fixed buffs that mods keep alive by constantly reapplying them no longer show a stuck "0:00" timer, pulse/flash their icon, or play the buff expired sound
   - Minor icon changes by moving some per-frame work (weather icon, quest count, seed harvest price and HUD icons) to less frequent updates
 - **v2.9.1**
@@ -163,8 +164,9 @@
   - Tile tooltips now build their contents on a throttled tick instead of every frame
   - Stop log spam from Custom Bush tooltips when its API throws internally
 - **v2.8.30**
-  - Responsive mod options menu: long translated labels now wrap and expand their slot height instead of being cut off or overlapped ([#2](https://github.com/dazuki/UIInfoSuite2Alt/pull/2)) [@CpdnCristiano](https://github.com/CpdnCristiano)
-  - Fix mail counter number alignment and resize for double-digit counts ([#2](https://github.com/dazuki/UIInfoSuite2Alt/pull/2)) [@CpdnCristiano](https://github.com/CpdnCristiano)
+  - Responsive mod options menu: [#2](https://github.com/dazuki/UIInfoSuite2Alt/pull/2) [@CpdnCristiano](https://github.com/CpdnCristiano)
+    - Long translated labels now wrap and expand their slot height instead of being cut off or overlapped
+  - Fix mail counter number alignment and resize for double-digit counts [#2](https://github.com/dazuki/UIInfoSuite2Alt/pull/2) [@CpdnCristiano](https://github.com/CpdnCristiano)
   - Fix crash when hovering crops from mods that set a minimum harvest quality (e.g. always gold/iridium)
   - Fix item effect range grid not aligning with the actual placement tile when placing items with a gamepad
 - **v2.8.29**
@@ -241,7 +243,7 @@
     - Ecologist/Gemologist quality predictions on forageable/mineral tooltips
     - Angler/Producer sale bonus shown on item hover tooltip
   - Add ground mineral tooltip in caves/mines (gems, minerals)
-  - [Better Junimos](https://www.nexusmods.com/stardewvalley/mods/2221) compatibility: ([#1](https://github.com/dazuki/UIInfoSuite2Alt/pull/1)) [@PaulEndri](https://github.com/PaulEndri)
+  - [Better Junimos](https://www.nexusmods.com/stardewvalley/mods/2221) compatibility: [#1](https://github.com/dazuki/UIInfoSuite2Alt/pull/1) [@PaulEndri](https://github.com/PaulEndri)
     - Junimo hut range uses configured radius
   - Controller:
     - Trinket slot and Trash can now navigate to inventory icons with controller
@@ -437,7 +439,7 @@
   - Changed font visuals for experience bar and experience gain for better look and feel
   - Fix calendar and billboard icons turned invisible when hovered/picking up items in inventory
   - Fix incorrect width on social page when using Better Game Menu
-  - Fix hover-text no being shown for garden pots when they are placed on flooring ([Annosz/UIInfoSuite2#638](https://github.com/Annosz/UIInfoSuite2/pull/638)) [@NermNermNerm](https://github.com/NermNermNerm)
+  - Fix hover-text no being shown for garden pots when they are placed on flooring [Annosz/UIInfoSuite2#638](https://github.com/Annosz/UIInfoSuite2/pull/638) [@NermNermNerm](https://github.com/NermNermNerm)
 - **v2.4.4**
   - Split calendar and billboard into two separate icons using game item sprites (more Content Patcher friendly)
   - Fix duplicate birthday icons appearing in multiplayer
@@ -446,9 +448,9 @@
   - Always show fish identity when reeling in (Sonar Bobber effect without the item)
   - Optional quality star overlay on the fish icon with real-time perfect catch bonus
 - **v2.4.2**
-  - Better Game Menu compatibility ([Annosz/UIInfoSuite2#648](https://github.com/Annosz/UIInfoSuite2/pull/648)) [@KhloeLeclair](https://github.com/KhloeLeclair)
+  - Better Game Menu compatibility [Annosz/UIInfoSuite2#648](https://github.com/Annosz/UIInfoSuite2/pull/648) [@KhloeLeclair](https://github.com/KhloeLeclair)
 - **v2.4.1**
-  - Cloudy Skies framework compatibility: weather icon now supports custom weather from mods like [Weather Wonders](https://www.nexusmods.com/stardewvalley/mods/23868) ([Annosz/UIInfoSuite2#659](https://github.com/Annosz/UIInfoSuite2/issues/659)) [@toffi3](https://github.com/toffi3)
+  - Cloudy Skies framework compatibility: weather icon now supports custom weather from mods like [Weather Wonders](https://www.nexusmods.com/stardewvalley/mods/23868) [Annosz/UIInfoSuite2#659](https://github.com/Annosz/UIInfoSuite2/issues/659) [@toffi3](https://github.com/toffi3)
 - **v2.4.0**
   - Show icon if there's a Festival/Event tomorrow or today
   - Option added to require watching TV daily to make Luck/Weather icon visible
@@ -461,9 +463,9 @@
   - Show quest count under journal icon
   - Show recipe item as Queen of Sauce icon with mini TV overlay
   - Fix fruit tree drop parsing for DAY_OF_WEEK and non-day conditions (e.g. LOCATION_IS_OUTDOORS)
-  - Fix CC bundle tooltips showing after Joja route or CC completion ([Annosz/UIInfoSuite2#572](https://github.com/Annosz/UIInfoSuite2/issues/572)) [@littlerat07](https://github.com/littlerat07)
-  - Fix Ginger and Spring Onion displaying as "Unknown crop" ([Annosz/UIInfoSuite2#660](https://github.com/Annosz/UIInfoSuite2/issues/660)) [@FiveMountain](https://github.com/FiveMountain)
-  - Fix mushroom log and mossy seed effect ranges ([Annosz/UIInfoSuite2#641](https://github.com/Annosz/UIInfoSuite2/pull/641)) [@Disassembler0](https://github.com/Disassembler0)
+  - Fix CC bundle tooltips showing after Joja route or CC completion [Annosz/UIInfoSuite2#572](https://github.com/Annosz/UIInfoSuite2/issues/572) [@littlerat07](https://github.com/littlerat07)
+  - Fix Ginger and Spring Onion displaying as "Unknown crop" [Annosz/UIInfoSuite2#660](https://github.com/Annosz/UIInfoSuite2/issues/660) [@FiveMountain](https://github.com/FiveMountain)
+  - Fix mushroom log and mossy seed effect ranges [Annosz/UIInfoSuite2#641](https://github.com/Annosz/UIInfoSuite2/pull/641) [@Disassembler0](https://github.com/Disassembler0)
 
 ![Added Mod Compatibility](.github/assets/added-mod-compatibility.png)
 
