@@ -496,6 +496,7 @@ internal class ShowBirthdayIcon : IDisposable
   private const float HeadshotScale = 2f;
   private const int HeadshotSize = 16;
   private const float HeartScale = 3f;
+  private const float GiftBadgeScale = 1.25f;
 
   private void EnqueueBirthdayIcons()
   {
@@ -525,14 +526,15 @@ internal class ShowBirthdayIcon : IDisposable
       foreach (NPC npc in npcs)
       {
         icons.Add(
+          // Hover hit-box only; the headshot is drawn by DrawHeadshotIcon
           new ClickableTextureComponent(
             npc.Name,
             Rectangle.Empty,
             null,
             npc.Name,
-            npc.Sprite.Texture,
-            npc.GetHeadShot(),
-            HeadshotScale
+            Game1.mouseCursors,
+            BirthdayBackgroundSource,
+            IconScale
           )
         );
       }
@@ -545,10 +547,9 @@ internal class ShowBirthdayIcon : IDisposable
         "Birthday",
         (batch, pos) =>
         {
-          DrawBirthdayBackground(batch, pos);
+          DrawHeadshotIcon(batch, pos, npcs[capturedI]);
+          DrawGiftBadge(batch, pos);
           icons[capturedI].bounds = GetIconBounds(pos);
-          icons[capturedI].sourceRect = npcs[capturedI].GetHeadShot();
-          icons[capturedI].draw(batch);
         },
         batch =>
         {
@@ -629,9 +630,50 @@ internal class ShowBirthdayIcon : IDisposable
     );
   }
 
+  private static void DrawHeadshotIcon(SpriteBatch batch, Point pos, NPC npc)
+  {
+    Texture2D? texture = npc.Sprite?.Texture;
+    Rectangle headShot = npc.GetHeadShot();
+    // Bottom row trimmed so the headshot doesn't overhang the icon row
+    headShot.Height -= 1;
+    if (texture == null || headShot.Width <= 0 || headShot.Height <= 0)
+    {
+      return;
+    }
+
+    batch.Draw(
+      texture,
+      new Vector2(pos.X, pos.Y - 3),
+      headShot,
+      Color.White,
+      0.0f,
+      Vector2.Zero,
+      BirthdayBackgroundSource.Width * IconScale / headShot.Width,
+      SpriteEffects.None,
+      1f
+    );
+  }
+
+  private static void DrawGiftBadge(SpriteBatch batch, Point pos)
+  {
+    float iconSize = BirthdayBackgroundSource.Width * IconScale;
+    float badgeSize = BirthdayBackgroundSource.Width * GiftBadgeScale;
+    batch.Draw(
+      Game1.mouseCursors,
+      new Vector2(pos.X + iconSize - badgeSize, pos.Y - 3 + iconSize - badgeSize),
+      BirthdayBackgroundSource,
+      Color.White,
+      0.0f,
+      Vector2.Zero,
+      GiftBadgeScale,
+      SpriteEffects.None,
+      1f
+    );
+  }
+
   private static Rectangle GetIconBounds(Point pos)
   {
-    return new Rectangle(pos.X - 7, pos.Y - 5, (int)(16.0 * IconScale), (int)(16.0 * IconScale));
+    return new Rectangle(pos.X, pos.Y - 3, (int)(16.0 * IconScale), (int)(16.0 * IconScale));
   }
 
   // Pixel-granular bottom-up fill mirroring ShowAccurateHearts.DrawPartialHeart.
@@ -1024,21 +1066,24 @@ internal class ShowBirthdayIcon : IDisposable
 
     foreach (NPC npc in npcs)
     {
+      Texture2D? texture = npc.Sprite?.Texture;
       Rectangle headShot = npc.GetHeadShot();
-      float scale = headshotDrawSize / headShot.Width;
-      float headshotY = textY + (lineHeight - headShot.Height * scale) / 2f - 10f;
-
-      batch.Draw(
-        npc.Sprite.Texture,
-        new Vector2(textX, headshotY),
-        headShot,
-        Color.White,
-        0f,
-        Vector2.Zero,
-        scale,
-        SpriteEffects.None,
-        1f
-      );
+      if (texture != null && headShot.Width > 0)
+      {
+        float scale = headshotDrawSize / headShot.Width;
+        float headshotY = textY + (lineHeight - headShot.Height * scale) / 2f;
+        batch.Draw(
+          texture,
+          new Vector2(textX, headshotY),
+          headShot,
+          Color.White,
+          0f,
+          Vector2.Zero,
+          scale,
+          SpriteEffects.None,
+          1f
+        );
+      }
 
       float nameY = textY + (lineHeight - font.LineSpacing) / 2f;
       Tools.DrawShadowedText(

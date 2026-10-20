@@ -101,6 +101,8 @@
 
 > Most new features can be toggled on/off in the mod's in-game options menu.
 
+- **v2.9.3**
+  - Birthday icon headshots are now larger, with the gift shown as a small badge, and are cropped to fit every NPC, including kids and shorter modded NPCs
 - **v2.9.2**
   - Added [Flexible Upgrades](https://www.nexusmods.com/stardewvalley/mods/53846) compatibility: [#7](https://github.com/dazuki/UIInfoSuite2Alt/pull/7) [@yousv](https://github.com/yousv)
     - Icons for each extra tool upgrade and Robin building projects
