@@ -57,7 +57,7 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
   private Texture2D? _townTexture;
   private readonly bool _hasRidgesideVillage;
   private readonly bool _hasSunberryVillage;
-  private readonly bool _hasEscasModdingPlugins;
+  private readonly bool _hasMtVapiusBoard;
   private readonly bool _hasSwordAndSorcery;
   private readonly bool _hasBiggerBackpack;
   private readonly bool _hasFullInventoryView;
@@ -87,7 +87,9 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
     _helper = helper;
     _hasRidgesideVillage = helper.ModRegistry.IsLoaded(ModCompat.RidgesideVillage);
     _hasSunberryVillage = helper.ModRegistry.IsLoaded(ModCompat.SunberryVillage);
-    _hasEscasModdingPlugins = helper.ModRegistry.IsLoaded(ModCompat.EscasModdingPlugins);
+    _hasMtVapiusBoard =
+      helper.ModRegistry.IsLoaded(ModCompat.EscasModdingPlugins)
+      && helper.ModRegistry.IsLoaded(ModCompat.MtVapius);
     _hasSwordAndSorcery = helper.ModRegistry.IsLoaded(ModCompat.SwordAndSorcery);
     _hasBiggerBackpack = helper.ModRegistry.IsLoaded(ModCompat.BiggerBackpack);
     _hasFullInventoryView = helper.ModRegistry.IsLoaded(ModCompat.FullInventoryView);
@@ -724,8 +726,7 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
     )
       boards.Add(("SunberryBoard", I18n.SpecialOrdersSunberry()));
     if (
-      _hasEscasModdingPlugins
-      && Game1.player.eventsSeen.Contains("Lumisteria.MtVapius_Hamlet_OrderBoard")
+      _hasMtVapiusBoard && Game1.player.eventsSeen.Contains("Lumisteria.MtVapius_Hamlet_OrderBoard")
     )
       boards.Add(("Esca.EMP/MtVapiusBoard", I18n.SpecialOrdersMtVapius()));
     if (
