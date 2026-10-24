@@ -65,7 +65,7 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
 
   private const string BoardSigPrefix = "UIInfoSuite2Alt.BoardSig.";
   private List<(string BoardType, string DisplayName)>? _cachedModBoards;
-  private int _cachedModBoardsDay = -1;
+  private int _cachedModBoardsKey;
 
   // RSV quest board reflection cache
   private bool _rsvQuestReflectionInit;
@@ -714,7 +714,14 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
 
   private List<(string BoardType, string DisplayName)> GetAvailableModBoards()
   {
-    if (_cachedModBoards != null && _cachedModBoardsDay == Game1.dayOfMonth)
+    // Unlock flags are only ever added, so their counts catch a same-day unlock; player ID covers split-screen
+    int key = HashCode.Combine(
+      Game1.player.UniqueMultiplayerID,
+      Game1.player.eventsSeen.Count,
+      Game1.player.mailReceived.Count,
+      Game1.MasterPlayer.mailReceived.Count
+    );
+    if (_cachedModBoards != null && _cachedModBoardsKey == key)
       return _cachedModBoards;
 
     List<(string, string)> boards = [];
@@ -736,7 +743,7 @@ internal class ShowCalendarAndBillboardOnGameMenuButton : IDisposable
       boards.Add(("SwordSorcery", I18n.SpecialOrdersSwordSorcery()));
 
     _cachedModBoards = boards;
-    _cachedModBoardsDay = Game1.dayOfMonth;
+    _cachedModBoardsKey = key;
     return boards;
   }
 
