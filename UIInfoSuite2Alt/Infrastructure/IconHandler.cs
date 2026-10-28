@@ -126,11 +126,11 @@ public sealed class IconHandler
 
     if (AndroidHud.IsAndroid)
     {
-      // The journal and menu buttons own the column the desktop vertical layout stacks into
+      // Journal or menu button always occupies this column (menu moves up when no quests)
+      xBase -= 67;
+
       if (questButtonShown)
       {
-        xBase -= 67;
-
         // The count badge and last-day clock share a column left of the journal button
         xBase -= Math.Max(
           UIElements.ShowQuestCount.GetAndroidSideWidth(),
