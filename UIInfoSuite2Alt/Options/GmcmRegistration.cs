@@ -75,8 +75,17 @@ public partial class ModEntry
       setValue: value => ModConfig.ShowOptionsTabInMenu = value
     );
 
-    // Keybinds
+    RegisterGmcmFeatureToggles(configMenu);
+    RegisterGmcmKeybinds(configMenu);
+  }
+
+  private void RegisterGmcmKeybinds(IGenericModConfigMenuApi configMenu)
+  {
+    Texture2D bannerKeybinds = AssetHelper.TryLoadTexture(Helper, "assets/banner_keybinds.png");
+
+    configMenu.AddPage(ModManifest, "keybinds", () => I18n.Section_Keybinds());
     configMenu.AddSectionTitle(ModManifest, text: () => I18n.Section_Keybinds());
+    configMenu.AddImage(ModManifest, () => bannerKeybinds, scale: 1);
 
     configMenu.AddKeybindList(
       ModManifest,
@@ -169,7 +178,6 @@ public partial class ModEntry
       getValue: () => ModConfig.ExpandBirthdayLovesKeybind,
       setValue: value => ModConfig.ExpandBirthdayLovesKeybind = value
     );
-    RegisterGmcmFeatureToggles(configMenu);
   }
 
   private void RegisterGmcmFeatureToggles(IGenericModConfigMenuApi configMenu)
@@ -204,22 +212,25 @@ public partial class ModEntry
     Texture2D bannerItems = AssetHelper.TryLoadTexture(Helper, "assets/banner_items.png");
     Texture2D bannerNpc = AssetHelper.TryLoadTexture(Helper, "assets/banner_npc.png");
 
+    // '>' = arrow glyph
+    void AddPageLinkWithBanner(string pageId, Func<string> text, Texture2D? banner = null)
+    {
+      configMenu.AddPageLink(ModManifest, pageId, () => "> " + text());
+      //if (banner is not null)
+      //{
+      //  configMenu.AddImage(ModManifest, () => banner, scale: 1);
+      //}
+    }
+
     Spacer(3);
-    // --- Main page: page links with banners ---
-    configMenu.AddPageLink(ModManifest, "hud-icons", () => I18n.Section_HudIcons());
-    configMenu.AddImage(ModManifest, () => bannerHud, scale: 1);
-    configMenu.AddPageLink(ModManifest, "farm-field", () => I18n.Section_FarmAndField());
-    configMenu.AddImage(ModManifest, () => bannerFfield, scale: 1);
-    configMenu.AddPageLink(
-      ModManifest,
-      "experience-skills",
-      () => I18n.Section_ExperienceAndSkills()
-    );
-    configMenu.AddImage(ModManifest, () => bannerExp, scale: 1);
-    configMenu.AddPageLink(ModManifest, "items-shopping", () => I18n.Section_ItemsAndShopping());
-    configMenu.AddImage(ModManifest, () => bannerItems, scale: 1);
-    configMenu.AddPageLink(ModManifest, "npc-social", () => I18n.Section_NpcAndSocial());
-    configMenu.AddImage(ModManifest, () => bannerNpc, scale: 1);
+    // --- Main page: page links with banners (keybinds page lives in RegisterGmcmKeybinds) ---
+    AddPageLinkWithBanner("keybinds", I18n.Section_Keybinds);
+    AddPageLinkWithBanner("hud-icons", I18n.Section_HudIcons, bannerHud);
+    AddPageLinkWithBanner("farm-field", I18n.Section_FarmAndField, bannerFfield);
+    AddPageLinkWithBanner("experience-skills", I18n.Section_ExperienceAndSkills, bannerExp);
+    AddPageLinkWithBanner("items-shopping", I18n.Section_ItemsAndShopping, bannerItems);
+    AddPageLinkWithBanner("npc-social", I18n.Section_NpcAndSocial, bannerNpc);
+    AddPageLinkWithBanner("icon-order", I18n.Section_IconOrder);
     // =====================
     // HUD Icons page
     // =====================
@@ -756,9 +767,10 @@ public partial class ModEntry
       v => ModConfig.DisplayCalendarAndBillboard = v
     );
 
-    // --- Icon Order (main page) ---
-    configMenu.AddPage(ModManifest, "");
-    Spacer(3);
+    // =====================
+    // Icon Order page
+    // =====================
+    configMenu.AddPage(ModManifest, "icon-order", () => I18n.Section_IconOrder());
     configMenu.AddSectionTitle(ModManifest, text: () => I18n.Section_IconOrder());
     configMenu.AddParagraph(ModManifest, text: () => I18n.Section_IconOrder_Subtitle());
 

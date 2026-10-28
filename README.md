@@ -103,7 +103,10 @@
 
 - **v2.9.3**
   - Birthday icon headshots are now larger, with the gift shown as a small badge, and are cropped to fit (hopefully)every NPC, including modded NPCs
+  - Tidied up the GMCM menu: section links now have an arrow so it's clearer they open a page, and Keybinds and Icon Order moved into their own pages
   - VMV SO board no longer stays in the board selector after Visit Mount Vapius is removed from a save
+  - Android:
+    - Fixed HUD icons overlapping the menu button when there are no active quests
 - **v2.9.2**
   - Added [Flexible Upgrades](https://www.nexusmods.com/stardewvalley/mods/53846) compatibility: [#7](https://github.com/dazuki/UIInfoSuite2Alt/pull/7) [@yousv](https://github.com/yousv)
     - Icons for each extra tool upgrade and Robin building projects
