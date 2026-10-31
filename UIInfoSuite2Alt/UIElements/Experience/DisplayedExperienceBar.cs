@@ -164,8 +164,9 @@ public class DisplayedExperienceBar
       return maxBarWidth;
     }
 
-    return (int)(
-      (double)experienceEarnedThisLevel / experienceDifferenceBetweenLevels * maxBarWidth
+    return Math.Min(
+      maxBarWidth,
+      (int)((double)experienceEarnedThisLevel / experienceDifferenceBetweenLevels * maxBarWidth)
     );
   }
 
