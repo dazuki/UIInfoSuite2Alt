@@ -48,6 +48,11 @@ public partial class ModEntry
       BetterShippingBinHelper.Initialize(Monitor);
     }
 
+    if (Helper.ModRegistry.IsLoaded(ModCompat.MobileUI))
+    {
+      MobileUiHelper.Initialize(Monitor);
+    }
+
     LogModRecommendations(Helper);
 
     if (configMenu is null)

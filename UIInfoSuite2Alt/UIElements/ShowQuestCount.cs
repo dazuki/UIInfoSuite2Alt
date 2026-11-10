@@ -69,7 +69,12 @@ internal class ShowQuestCount : IDisposable
       return;
     }
 
-    Rectangle bounds = Game1.dayTimeMoneyBox.questButton.bounds;
+    if (AndroidHud.QuestButton is not { } questButton)
+    {
+      return;
+    }
+
+    Rectangle bounds = questButton.bounds;
     GetPositionAndSize(
       bounds,
       questCount,
@@ -167,12 +172,12 @@ internal class ShowQuestCount : IDisposable
     center = Vector2.Zero;
     height = BackgroundHeight;
 
-    if (!AndroidHud.IsAndroid || Game1.dayTimeMoneyBox?.questButton == null)
+    if (!AndroidHud.IsAndroid || AndroidHud.QuestButton is not { } questButton)
     {
       return false;
     }
 
-    Rectangle bounds = Game1.dayTimeMoneyBox.questButton.bounds;
+    Rectangle bounds = questButton.bounds;
     int width = GetBackgroundWidth(Math.Max(1, GetVisibleQuestCount()));
     center = new Vector2(
       bounds.X - SideGap - width / 2f,

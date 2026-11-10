@@ -47,6 +47,7 @@ public static class ModCompat
   public const string OneClickShedReloader = "BitwiseJonMods.OneClickShedReloader";
   public const string BetterShippingBin = "MindMeltMax.BetterShipping";
   public const string FlexibleUpgrades = "yousv.FlexibleUpgrades";
+  public const string MobileUI = "WisnuNug.MobileUI";
 
   // original UIInfoSuite variants
   public const string UIInfoSuite2 = "Annosz.UiInfoSuite2";

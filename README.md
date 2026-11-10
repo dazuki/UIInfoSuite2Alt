@@ -101,6 +101,9 @@
 
 > Most new features can be toggled on/off in the mod's in-game options menu.
 
+- **v2.9.4**
+  - Android:
+    - Fixed HUD icons overlapping the date box with [MobileUI](https://www.nexusmods.com/stardewvalley/mods/17652)
 - **v2.9.3**
   - Birthday icon headshots are now larger, with the gift shown as a small badge, and are cropped to fit (hopefully)every NPC, including modded NPCs
   - Tidied up the GMCM menu: section links now have an arrow so it's clearer they open a page, and Keybinds and Icon Order moved into their own pages
@@ -513,6 +516,7 @@ The compatability ranges from small fixes to bigger integration with mod provide
 - [One Click Shed Reloader](https://www.nexusmods.com/stardewvalley/mods/2052)
 - [Better Shipping Bin](https://www.nexusmods.com/stardewvalley/mods/10487)
 - [Flexible Upgrades](https://www.nexusmods.com/stardewvalley/mods/53846)
+- [MobileUI Android](https://www.nexusmods.com/stardewvalley/mods/17652)
 
 <p align="center">
   <a href="https://ko-fi.com/dazuki89" target="_BLANK">

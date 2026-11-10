@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
+using UIInfoSuite2Alt.Compatibility.Helpers;
 
 namespace UIInfoSuite2Alt.Infrastructure;
 
@@ -31,6 +32,9 @@ internal static class AndroidHud
   private static FieldInfo? _verticalToolbar;
 
   public static bool IsAndroid => Constants.TargetPlatform == GamePlatform.Android;
+
+  public static ClickableTextureComponent? QuestButton =>
+    MobileUiHelper.QuestButton ?? Game1.dayTimeMoneyBox?.questButton;
 
   /// <summary>Height a bottom toolbar covers. 0 on PC, or when the toolbar is vertical or at the top.</summary>
   public static int ToolbarBottomInset

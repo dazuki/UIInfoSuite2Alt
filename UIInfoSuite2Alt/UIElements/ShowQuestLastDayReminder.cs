@@ -97,7 +97,12 @@ internal class ShowQuestLastDayReminder : IDisposable
 
     // Snap to a whole-pixel top-left (origin Vector2.Zero, integer scale) so every source pixel maps
     // to exactly ClockScale screen pixels - i.e. pixel perfect under PointClamp.
-    Rectangle journal = Game1.dayTimeMoneyBox.questButton.bounds;
+    if (AndroidHud.QuestButton is not { } questButton)
+    {
+      return;
+    }
+
+    Rectangle journal = questButton.bounds;
     float half = ClockSourceRect.Width * ClockScale / 2f;
     Vector2 clockPos;
 

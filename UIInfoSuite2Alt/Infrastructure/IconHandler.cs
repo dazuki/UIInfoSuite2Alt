@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI.Utilities;
 using StardewValley;
-using StardewValley.Menus;
+using UIInfoSuite2Alt.Compatibility.Helpers;
 using UIInfoSuite2Alt.UIElements;
 
 namespace UIInfoSuite2Alt.Infrastructure;
@@ -120,15 +120,12 @@ public sealed class IconHandler
     _animatedXOffset.Value = animatedX;
 
     int yPos = GetRowTopY() + ExtraYOffset;
-    int xBase = GetRightEdge() - 70 + (int)Math.Round(animatedX);
+    int xBase = GetRowStartX() + (int)Math.Round(animatedX);
 
     bool questButtonShown = IsQuestLogPermanent || Game1.player.hasVisibleQuests;
 
     if (AndroidHud.IsAndroid)
     {
-      // Journal or menu button always occupies this column (menu moves up when no quests)
-      xBase -= 67;
-
       if (questButtonShown)
       {
         // The count badge and last-day clock share a column left of the journal button
@@ -188,20 +185,33 @@ public sealed class IconHandler
   /// <summary>Top of the icon row. Android tracks the journal button, which moves with the date box scale.</summary>
   private static int GetRowTopY()
   {
-    if (AndroidHud.IsAndroid && Game1.dayTimeMoneyBox?.questButton != null)
+    if (AndroidHud.IsAndroid && AndroidHud.QuestButton is { } questButton)
     {
-      return Game1.dayTimeMoneyBox.questButton.bounds.Y;
+      return questButton.bounds.Y + GetMobileUiNudge();
     }
 
     return Game1.options.zoomButtons ? 290 : 260;
   }
 
-  /// <summary>Right edge the row hangs off, in the space the icons draw in.</summary>
-  private static int GetRightEdge()
+  // MobileUI's journal button is smaller than vanilla's (44x46 vs 64x64)
+  private static int GetMobileUiNudge()
   {
-    return AndroidHud.IsAndroid
-      ? (int)(Game1.uiViewport.Width / AndroidHud.Scale)
-      : Tools.GetWidthInPlayArea();
+    return MobileUiHelper.QuestButton != null ? 8 : 0;
+  }
+
+  private static int GetRowStartX()
+  {
+    if (!AndroidHud.IsAndroid)
+    {
+      return Tools.GetWidthInPlayArea() - 70;
+    }
+
+    if (AndroidHud.QuestButton is { } questButton)
+    {
+      return questButton.bounds.X - 65 + GetMobileUiNudge();
+    }
+
+    return (int)(Game1.uiViewport.Width / AndroidHud.Scale) - 137;
   }
 
   public void Reset(object? sender, EventArgs e)
